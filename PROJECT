@@ -1,0 +1,16 @@
+domain: stream-stack.tanx
+layout:
+- go.kubebuilder.io/v3
+projectName: store-operator
+repo: github.com/stream-stack/store-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: stream-stack.tanx
+  group: core
+  kind: StoreSet
+  path: github.com/stream-stack/store-operator/api/v1
+  version: v1
+version: "3"

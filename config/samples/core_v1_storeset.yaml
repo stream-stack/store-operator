@@ -1,0 +1,6 @@
+apiVersion: core.stream-stack.tanx/v1
+kind: StoreSet
+metadata:
+  name: storeset-sample
+spec:
+  # TODO(user): Add fields here

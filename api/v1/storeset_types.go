@@ -17,24 +17,66 @@ limitations under the License.
 package v1
 
 import (
+	v12 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type LocalPvSpec struct {
+	NodeAffinity      *v1.VolumeNodeAffinity `json:"nodeAffinity,omitempty"`
+	Capacity          resource.Quantity      `json:"capacity"`
+	LocalVolumeSource *v1.LocalVolumeSource  `json:"source,omitempty"`
+}
+
+type StoreStatefulSetSpec struct {
+	Replicas *int32 `json:"replicas,omitempty"`
+	Image    string `json:"image,omitempty"`
+}
+
+type PublisherDeptSpec struct {
+	Replicas *int32 `json:"replicas,omitempty"`
+	Image    string `json:"image,omitempty"`
+}
+
 // StoreSetSpec defines the desired state of StoreSet
 type StoreSetSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	Version string `json:"version,omitempty"`
+	Version   string               `json:"version,omitempty"`
+	Volume    LocalPvSpec          `json:"volume,omitempty"`
+	Store     StoreStatefulSetSpec `json:"store,omitempty"`
+	Publisher PublisherDeptSpec    `json:"publisher,omitempty"`
+}
+
+type LocalPvStatus struct {
+	Name   string                    `json:"name"`
+	Status v1.PersistentVolumeStatus `json:",inline"`
+}
+
+type StoreStatefulSetStatus struct {
+	WorkloadName string                `json:"workloadName"`
+	ServiceName  string                `json:"serviceName"`
+	Workload     v12.StatefulSetStatus `json:"workload"`
+	Service      v1.ServiceStatus      `json:"service"`
+}
+
+type PublisherDeptStatus struct {
+	Name   string               `json:"name"`
+	Status v12.DeploymentStatus `json:",inline"`
 }
 
 // StoreSetStatus defines the observed state of StoreSet
 type StoreSetStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	VolumeStatus    LocalPvStatus          `json:"volume"`
+	StoreStatus     StoreStatefulSetStatus `json:"Store"`
+	PublisherStatus PublisherDeptStatus    `json:"publisher"`
 }
 
 //+kubebuilder:object:root=true

@@ -62,17 +62,11 @@ func NewStepContext(context context.Context, c *v13.StoreSet, logger logr.Logger
 }
 
 type InitConfig struct {
-	Version            string
-	DiscoveryUrl       string
-	StoreImage         string
-	StoreSchedulerMode string
-	StoreSchedulerName string
-	StoreTolerationKey string
-	StoreReplicas      int32
-	ProxyImage         string
-	ProxyReplicas      int32
-	PublisherImage     string
-	PublisherReplicas  int32
+	Version           string
+	StoreImage        string
+	StoreReplicas     int32
+	PublisherImage    string
+	PublisherReplicas int32
 }
 
 type Step struct {
@@ -83,7 +77,7 @@ type Step struct {
 	GetObj func() Object
 	Render func(c *v13.StoreSet) Object
 	//设置cluster的status,对比子资源目标和现在的声明情况
-	SetStatus func(c *v13.StoreSet, target, now Object) (bool, Object, error)
+	SetStatus func(c *v13.StoreSet, target, now Object) (needUpdate bool, updateObject Object, err error)
 	Del       func(ctx context.Context, c *v13.StoreSet, client client.Client) error
 	Next      func(c *v13.StoreSet) bool
 
@@ -125,11 +119,10 @@ func (m *Step) ValidateUpdate(now *v13.StoreSet, old *v13.StoreSet) field.ErrorL
 }
 
 func (m *Step) Default(c *v13.StoreSet) {
-	if !m.hasSub() {
-		if m.SetDefault != nil {
-			m.SetDefault(c)
-		}
-	} else {
+	if m.SetDefault != nil {
+		m.SetDefault(c)
+	}
+	if m.hasSub() {
 		for _, m := range m.Sub {
 			m.Default(c)
 		}

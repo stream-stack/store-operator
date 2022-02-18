@@ -340,7 +340,8 @@ func getLeaderInfos(c *v1.StoreSet, replicas int32) []*leaderInfo {
 		hostname := fmt.Sprintf(`%s-%d`, c.Status.StoreStatus.WorkloadName, i)
 		address := fmt.Sprintf(`%s.%s.%s.svc:%d`, hostname, c.Status.StoreStatus.ServiceName, c.Namespace, containerPort.IntVal)
 
-		timeout, _ := context.WithTimeout(context.TODO(), defaultGrpcTimeOut)
+		timeout, cancelFunc := context.WithTimeout(context.TODO(), defaultGrpcTimeOut)
+		defer cancelFunc()
 		conn, err := grpc.DialContext(timeout, address, grpc.WithInsecure())
 		if err != nil {
 			continue

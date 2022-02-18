@@ -43,9 +43,8 @@ func AddSteps(key string, m ...*Step) {
 	VersionsModules[key] = value
 	for _, module := range m {
 		fmt.Println(module)
-		//todo:实现版本化注册
-		//v1.RegisterVersionedDefaulters(key, module)
-		//v1.RegisterVersionedValidators(key, module)
+		v13.RegisterVersionedDefaulters(key, module)
+		v13.RegisterVersionedValidators(key, module)
 	}
 }
 

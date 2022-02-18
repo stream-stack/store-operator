@@ -13,4 +13,8 @@ resources:
   kind: StoreSet
   path: github.com/stream-stack/store-operator/api/v1
   version: v1
+  webhooks:
+    defaulting: true
+    validation: true
+    webhookVersion: v1
 version: "3"

@@ -15,4 +15,5 @@ func init() {
 	}
 	steps.NewLocalPersistentVolumeSteps(config)
 	steps.NewStoreSteps(config)
+	steps.NewPublisherSteps(config)
 }

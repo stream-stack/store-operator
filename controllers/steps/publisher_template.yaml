@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: name
+  labels:
+    app: app
+    version: version
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app
+      version: version
+  template:
+    metadata:
+      labels:
+        app: app
+        version: version
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: publisher
+          image: image
+          imagePullPolicy: IfNotPresent
+          command:
+            - 'publisher'
+          workingDir: '/'
+          args:
+            - '--Address=dns://%s.%s:%d'
+#TODO:健康检查,资源限制

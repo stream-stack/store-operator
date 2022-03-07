@@ -43,6 +43,18 @@ type StoreSetReconciler struct {
 //+kubebuilder:rbac:groups=core.stream-stack.tanx,resources=storesets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core.stream-stack.tanx,resources=storesets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core.stream-stack.tanx,resources=storesets/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get
+//+kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=statefulset,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=statefulset/status,verbs=get
+//+kubebuilder:rbac:groups=apps,resources=statefulset/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
+//+kubebuilder:rbac:groups="",resources=configmaps/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=persistentvolume,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=persistentvolume/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=service,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="",resources=service/finalizers,verbs=update
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the StoreSet closer to the desired state.

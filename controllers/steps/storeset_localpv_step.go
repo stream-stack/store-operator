@@ -74,6 +74,7 @@ func buildStepByIndex(index int32) *controllers.Step {
 		},
 		SetStatus: func(c *v1.StoreSet, target, now controllers.Object) (needUpdate bool, updateObject controllers.Object, err error) {
 			o := now.(*v12.PersistentVolume)
+			fmt.Println("setstatus:========", o.Status)
 			c.Status.VolumeStatus = v1.LocalPvStatus{
 				Name:   c.Name,
 				Status: o.Status,
@@ -88,7 +89,10 @@ func buildStepByIndex(index int32) *controllers.Step {
 			return false, now, nil
 		},
 		Next: func(c *v1.StoreSet) bool {
-			return c.Status.VolumeStatus.Status.Phase == v12.VolumeAvailable
+			//TODO:如何watch pv,根据状态判断
+			return true
+			//fmt.Println("ppppppppppppppppppppppppppppppppp", c.Status.VolumeStatus.Status, c.Status.VolumeStatus.Status.Phase == v12.VolumeAvailable || c.Status.VolumeStatus.Status.Phase == v12.VolumeBound)
+			//return c.Status.VolumeStatus.Status.Phase == v12.VolumeAvailable || c.Status.VolumeStatus.Status.Phase == v12.VolumeBound
 		},
 		SetDefault: func(c *v1.StoreSet) {
 			if c.Spec.Volume.LocalVolumeSource == nil {

@@ -1,0 +1,26 @@
+apiVersion: core.stream-stack.tanx/v1
+kind: StoreSet
+metadata:
+  name: test
+  labels:
+    test: test
+spec:
+  version: "x86-1.0.0"
+  volume:
+    nodeAffinity:
+      required:
+        nodeSelectorTerms:
+          - matchExpressions:
+              - key: beta.kubernetes.io/arch
+                operator: In
+                values:
+                  - amd64
+    capacity: "5Gi"
+    source:
+      path: "/data"
+  store:
+    replicas: 3
+    image: "ccr.ccs.tencentyun.com/stream/stream:store-v1"
+  publisher:
+    replicas: 1
+    image: "ccr.ccs.tencentyun.com/stream/stream:publisher-v1"

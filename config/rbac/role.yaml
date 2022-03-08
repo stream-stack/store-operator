@@ -8,53 +8,10 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - configmaps
-  verbs:
-  - get
-  - list
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - configmaps/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolume
+  - events
   verbs:
   - create
-  - delete
-  - get
-  - list
   - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - persistentvolume/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - ""
-  resources:
-  - service
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - ""
-  resources:
-  - service/finalizers
-  verbs:
-  - update
 - apiGroups:
   - apps
   resources:
@@ -79,10 +36,12 @@ rules:
   - deployments/status
   verbs:
   - get
+  - patch
+  - update
 - apiGroups:
   - apps
   resources:
-  - statefulset
+  - statefulsets
   verbs:
   - create
   - delete
@@ -94,15 +53,85 @@ rules:
 - apiGroups:
   - apps
   resources:
-  - statefulset/finalizers
+  - statefulsets/finalizers
   verbs:
   - update
 - apiGroups:
   - apps
   resources:
-  - statefulset/status
+  - statefulsets/status
   verbs:
   - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - configmaps/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - persistentvolumes/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - services
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - ""
+  resources:
+  - services/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - ""
+  resources:
+  - services/status
+  verbs:
+  - get
+  - patch
+  - update
 - apiGroups:
   - core.stream-stack.tanx
   resources:

@@ -8,9 +8,9 @@ import (
 func init() {
 	config := &controllers.InitConfig{
 		Version:           "x86-1.0.0",
-		StoreImage:        "",
+		StoreImage:        "ccr.ccs.tencentyun.com/stream/stream:store-v1",
 		StoreReplicas:     3,
-		PublisherImage:    "",
+		PublisherImage:    "ccr.ccs.tencentyun.com/stream/stream:publisher-v1",
 		PublisherReplicas: 1,
 	}
 	steps.NewLocalPersistentVolumeSteps(config)

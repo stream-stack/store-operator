@@ -52,7 +52,17 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 			c.Status.StoreStatus.Service = o.Status
 
 			t := target.(*v12.Service)
-			if !reflect.DeepEqual(t.Spec, o.Spec) {
+			if !reflect.DeepEqual(t.Spec.Selector, o.Spec.Selector) {
+				o.Spec = t.Spec
+				return true, o, nil
+			}
+
+			if !reflect.DeepEqual(t.Spec.Ports, o.Spec.Ports) {
+				o.Spec = t.Spec
+				return true, o, nil
+			}
+
+			if !reflect.DeepEqual(t.Spec.Type, o.Spec.Type) {
 				o.Spec = t.Spec
 				return true, o, nil
 			}
@@ -123,7 +133,7 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 								{
 									Name:    "store",
 									Image:   c.Spec.Store.Image,
-									Command: []string{`store`},
+									Command: []string{`/store`},
 									//      --Address string                  TCP host+port for this node (default "0.0.0.0:50051")
 									//      --Bootstrap                       Whether to bootstrap the Raft cluster
 									//      --DataDir string                  data dir (default "data")
@@ -187,7 +197,7 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 									ImagePullPolicy: v12.PullIfNotPresent,
 								},
 							},
-							RestartPolicy: v12.RestartPolicyOnFailure,
+							RestartPolicy: v12.RestartPolicyAlways,
 							//ServiceAccountName:            "",
 							//ImagePullSecrets:              ,
 							Affinity: &v12.Affinity{
@@ -246,20 +256,26 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 		},
 		Next: func(c *v1.StoreSet) bool {
 			replicas := *c.Spec.Store.Replicas
-			if c.Status.StoreStatus.Workload.AvailableReplicas != replicas {
+
+			if c.Status.StoreStatus.Workload.ReadyReplicas != replicas {
+				fmt.Println("11111111111111111")
 				return false
 			}
 			infos := getLeaderInfos(c, replicas)
 			if len(infos) == 1 {
+				fmt.Println("22222222222222222222")
 				return true
 			}
+			fmt.Println("当前leader数量:", len(infos))
 			leader := getMaxTermLeader(infos)
 			if leader == nil {
 				//没有leader
+				fmt.Println("33333333333333333")
 				return false
 			}
 			err := joinLeader(leader, infos)
 			if err != nil {
+				fmt.Println("444444444444444444444444")
 				return false
 			}
 			closeConn(infos)
@@ -276,14 +292,14 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 		},
 		ValidateCreateStep: func(c *v1.StoreSet) field.ErrorList {
 			var allErrs field.ErrorList
-			if *c.Spec.Store.Replicas%2 != 0 {
+			if *c.Spec.Store.Replicas%2 == 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec.store.replicas"), c.Spec.Store.Replicas, "必须为奇数"))
 			}
 			return allErrs
 		},
 		ValidateUpdateStep: func(now *v1.StoreSet, old *v1.StoreSet) field.ErrorList {
 			var allErrs field.ErrorList
-			if *now.Spec.Store.Replicas%2 != 0 {
+			if *now.Spec.Store.Replicas%2 == 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec.store.replicas"), now.Spec.Store.Replicas, "必须为奇数"))
 			}
 			return allErrs
@@ -340,16 +356,19 @@ func getLeaderInfos(c *v1.StoreSet, replicas int32) []*leaderInfo {
 		hostname := fmt.Sprintf(`%s-%d`, c.Status.StoreStatus.WorkloadName, i)
 		address := fmt.Sprintf(`%s.%s.%s.svc:%d`, hostname, c.Status.StoreStatus.ServiceName, c.Namespace, containerPort.IntVal)
 
+		fmt.Println("连接:", address)
 		timeout, cancelFunc := context.WithTimeout(context.TODO(), defaultGrpcTimeOut)
 		defer cancelFunc()
 		conn, err := grpc.DialContext(timeout, address, grpc.WithInsecure())
 		if err != nil {
+			fmt.Println("DialContext================", err.Error())
 			continue
 		}
 
 		client := proto.NewRaftAdminClient(conn)
 		stats, err := client.Stats(timeout, &proto.StatsRequest{})
 		if err != nil {
+			fmt.Println("Stats===================", err.Error())
 			_ = conn.Close()
 			continue
 		}
@@ -372,7 +391,7 @@ func getLeaderInfos(c *v1.StoreSet, replicas int32) []*leaderInfo {
 const topologyKeyHostname = "kubernetes.io/hostname"
 const defaultGrpcTimeOut = time.Second * 5
 
-var containerPort = intstr.FromInt(50001)
+var containerPort = intstr.FromInt(50051)
 
 type leaderInfo struct {
 	addr     string

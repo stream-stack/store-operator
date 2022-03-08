@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -44,17 +45,20 @@ type StoreSetReconciler struct {
 //+kubebuilder:rbac:groups=core.stream-stack.tanx,resources=storesets/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core.stream-stack.tanx,resources=storesets/finalizers,verbs=update
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get
+//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
-//+kubebuilder:rbac:groups=apps,resources=statefulset,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=apps,resources=statefulset/status,verbs=get
-//+kubebuilder:rbac:groups=apps,resources=statefulset/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=configmaps,verbs=get;list;watch
-//+kubebuilder:rbac:groups="",resources=configmaps/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=persistentvolume,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=persistentvolume/finalizers,verbs=update
-//+kubebuilder:rbac:groups="",resources=service,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups="",resources=service/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=statefulsets/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=apps,resources=statefulsets/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=configmaps,verbs=get;list;watch
+//+kubebuilder:rbac:groups=core,resources=configmaps/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=core,resources=configmaps/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=persistentvolumes/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=services/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=core,resources=services/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the StoreSet closer to the desired state.
@@ -74,6 +78,46 @@ func (r *StoreSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
+
+	//p := &corev1.PersistentVolume{}
+	//err = r.Client.Get(ctx, client.ObjectKey{
+	//	Namespace: "default",
+	//	Name:      "test-0",
+	//}, p)
+	//if err != nil && errors.IsNotFound(err) {
+	//	p = &corev1.PersistentVolume{
+	//		ObjectMeta: metav1.ObjectMeta{
+	//			Name:        "test-0",
+	//			Namespace:   cs.Namespace,
+	//			Labels:      cs.Labels,
+	//			Annotations: cs.Annotations,
+	//		},
+	//		Spec: corev1.PersistentVolumeSpec{
+	//			Capacity: corev1.ResourceList{
+	//				corev1.ResourceStorage: cs.Spec.Volume.Capacity,
+	//			},
+	//			PersistentVolumeSource: corev1.PersistentVolumeSource{
+	//				Local: cs.Spec.Volume.LocalVolumeSource,
+	//			},
+	//			AccessModes:                   []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
+	//			PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimRetain,
+	//			StorageClassName:              cs.Name,
+	//			NodeAffinity:                  cs.Spec.Volume.NodeAffinity,
+	//		},
+	//	}
+	//	controllerutil.SetControllerReference(cs, p, r.Scheme)
+	//	err = r.Client.Create(ctx, p)
+	//	fmt.Println("create result:", err)
+	//	return ctrl.Result{}, nil
+	//}
+	//if err != nil {
+	//	fmt.Println("get error:", err)
+	//	return ctrl.Result{}, nil
+	//}
+	//fmt.Println("正常获取到pv==========", p)
+	//fmt.Println(rl)
+	//return ctrl.Result{}, nil
+
 	moduleContext := NewStepContext(ctx, cs, rl, r)
 	if !cs.ObjectMeta.DeletionTimestamp.IsZero() {
 		return deleteStoreSet(moduleContext)
@@ -117,7 +161,7 @@ func ReconcileStoreSet(ctx *ModuleContext) (ctrl.Result, error) {
 	version := ctx.Spec.Version
 	modules, ok := VersionsModules[version]
 	if !ok {
-		return ctrl.Result{Requeue: false}, fmt.Errorf("not support version %s", version)
+		return ctrl.Result{Requeue: false}, fmt.Errorf("unsupport version %s", version)
 	}
 	ctx.Info("Begin StoreSet Reconcile", "version", version, "name", ctx.Name, "namespace", ctx.Namespace)
 	total := len(modules)

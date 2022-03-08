@@ -23,8 +23,8 @@ spec:
           image: image
           imagePullPolicy: IfNotPresent
           command:
-            - 'publisher'
+            - './publisher'
           workingDir: '/'
           args:
-            - '--Address=dns://%s.%s:%d'
+            - '--Address=dns:///%s.%s:%d'
 #TODO:健康检查,资源限制

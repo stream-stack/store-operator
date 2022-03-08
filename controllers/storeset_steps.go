@@ -34,7 +34,7 @@ func AddSteps(key string, m ...*Step) {
 
 	for i := 0; i < len(value); i++ {
 		for j := i; j < len(value); j++ {
-			if value[i].Order < value[j].Order {
+			if value[i].Order > value[j].Order {
 				value[i], value[j] = value[j], value[i]
 			}
 		}
@@ -42,7 +42,6 @@ func AddSteps(key string, m ...*Step) {
 
 	VersionsModules[key] = value
 	for _, module := range m {
-		fmt.Println(module)
 		v13.RegisterVersionedDefaulters(key, module)
 		v13.RegisterVersionedValidators(key, module)
 	}
@@ -202,7 +201,7 @@ func (m *Step) create(ctx *ModuleContext) error {
 	if err := controllerutil.SetControllerReference(ctx.StoreSet, render, ctx.reconciler.Scheme); err != nil {
 		return err
 	}
-	ctx.reconciler.Recorder.Event(ctx.StoreSet, v12.EventTypeNormal, "Creating", render.GetName())
+	ctx.reconciler.Recorder.Event(ctx.StoreSet, v12.EventTypeNormal, fmt.Sprintf("Creating-%s", m.Name), render.GetName())
 	err := ctx.reconciler.Create(ctx, render)
 	if err != nil && errors.IsAlreadyExists(err) {
 		return nil

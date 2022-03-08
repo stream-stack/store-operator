@@ -18,9 +18,3 @@ spec:
     capacity: "5Gi"
     source:
       path: "/data"
-  store:
-    replicas: 3
-    image: "ccr.ccs.tencentyun.com/stream/stream:store-v1"
-  publisher:
-    replicas: 1
-    image: "ccr.ccs.tencentyun.com/stream/stream:publisher-v1"

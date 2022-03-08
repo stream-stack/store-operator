@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/Jille/raftadmin/proto"
+	"github.com/go-logr/logr"
 	v1 "github.com/stream-stack/store-operator/api/v1"
 	"github.com/stream-stack/store-operator/controllers"
 	"google.golang.org/grpc"
@@ -69,7 +70,7 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 
 			return false, now, nil
 		},
-		Next: func(c *v1.StoreSet) bool {
+		Next: func(ctx *controllers.ModuleContext) bool {
 			return true
 		},
 		SetDefault: func(c *v1.StoreSet) {
@@ -254,28 +255,26 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 
 			return false, now, nil
 		},
-		Next: func(c *v1.StoreSet) bool {
+		Next: func(ctx *controllers.ModuleContext) bool {
+			c := ctx.StoreSet
 			replicas := *c.Spec.Store.Replicas
 
 			if c.Status.StoreStatus.Workload.ReadyReplicas != replicas {
-				fmt.Println("11111111111111111")
 				return false
 			}
-			infos := getLeaderInfos(c, replicas)
+			infos := getLeaderInfos(ctx.Logger, c, replicas)
 			if len(infos) == 1 {
-				fmt.Println("22222222222222222222")
 				return true
 			}
-			fmt.Println("当前leader数量:", len(infos))
+			ctx.Logger.Info("当前leader数量", ctx.Name, len(infos))
 			leader := getMaxTermLeader(infos)
 			if leader == nil {
 				//没有leader
-				fmt.Println("33333333333333333")
+				ctx.Logger.Info("当前leader数量为0,请检查pod是否正常")
 				return false
 			}
 			err := joinLeader(leader, infos)
 			if err != nil {
-				fmt.Println("444444444444444444444444")
 				return false
 			}
 			closeConn(infos)
@@ -349,26 +348,26 @@ func getMaxTermLeader(infos []*leaderInfo) *leaderInfo {
 	return result
 }
 
-func getLeaderInfos(c *v1.StoreSet, replicas int32) []*leaderInfo {
+func getLeaderInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) []*leaderInfo {
 	var i int32
 	leaders := make([]*leaderInfo, 0)
 	for ; i < replicas; i++ {
 		hostname := fmt.Sprintf(`%s-%d`, c.Status.StoreStatus.WorkloadName, i)
 		address := fmt.Sprintf(`%s.%s.%s.svc:%d`, hostname, c.Status.StoreStatus.ServiceName, c.Namespace, containerPort.IntVal)
 
-		fmt.Println("连接:", address)
+		logger.Info("try connect statefulset pod", "address", address)
 		timeout, cancelFunc := context.WithTimeout(context.TODO(), defaultGrpcTimeOut)
 		defer cancelFunc()
 		conn, err := grpc.DialContext(timeout, address, grpc.WithInsecure())
 		if err != nil {
-			fmt.Println("DialContext================", err.Error())
+			logger.Info("Grpc Dial error", "error", err, "address", address)
 			continue
 		}
 
 		client := proto.NewRaftAdminClient(conn)
 		stats, err := client.Stats(timeout, &proto.StatsRequest{})
 		if err != nil {
-			fmt.Println("Stats===================", err.Error())
+			logger.Info("Grpc call Status method error", "error", err, "address", address)
 			_ = conn.Close()
 			continue
 		}

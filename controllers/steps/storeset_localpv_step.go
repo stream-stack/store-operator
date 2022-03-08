@@ -7,6 +7,7 @@ import (
 	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 const DefaultVolumePath = "/data"
@@ -53,7 +54,6 @@ func buildStepByIndex(index int32) *controllers.Step {
 			return &v12.PersistentVolume{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        fmt.Sprintf(`%s-%d`, c.Name, index),
-					Namespace:   c.Namespace,
 					Labels:      c.Labels,
 					Annotations: c.Annotations,
 				},
@@ -74,7 +74,6 @@ func buildStepByIndex(index int32) *controllers.Step {
 		},
 		SetStatus: func(c *v1.StoreSet, target, now controllers.Object) (needUpdate bool, updateObject controllers.Object, err error) {
 			o := now.(*v12.PersistentVolume)
-			fmt.Println("setstatus:========", o.Status)
 			c.Status.VolumeStatus = v1.LocalPvStatus{
 				Name:   c.Name,
 				Status: o.Status,
@@ -88,11 +87,17 @@ func buildStepByIndex(index int32) *controllers.Step {
 
 			return false, now, nil
 		},
-		Next: func(c *v1.StoreSet) bool {
-			//TODO:如何watch pv,根据状态判断
+		Next: func(ctx *controllers.ModuleContext) bool {
+			//note: 命名空间中的资源(StoreSet)无法owner pv,cluster-scoped resource must not have a namespace-scoped owner, owner's namespace default
+			//只能判断是否创建成功, 如果创建成功, 则认为通过
+			p := &v12.PersistentVolume{}
+			p.Name = fmt.Sprintf(`%s-%d`, ctx.StoreSet.Name, index)
+			if err := ctx.GetK8sClient().Get(ctx.Context, client.ObjectKeyFromObject(p), p); err != nil {
+				ctx.Logger.Error(err, "get PersistentVolume error", "PersistentVolume.Name", p.Name)
+				return false
+			}
 			return true
-			//fmt.Println("ppppppppppppppppppppppppppppppppp", c.Status.VolumeStatus.Status, c.Status.VolumeStatus.Status.Phase == v12.VolumeAvailable || c.Status.VolumeStatus.Status.Phase == v12.VolumeBound)
-			//return c.Status.VolumeStatus.Status.Phase == v12.VolumeAvailable || c.Status.VolumeStatus.Status.Phase == v12.VolumeBound
+			//return p.Status.Phase == v12.VolumeAvailable || p.Status.Phase == v12.VolumeBound
 		},
 		SetDefault: func(c *v1.StoreSet) {
 			if c.Spec.Volume.LocalVolumeSource == nil {

@@ -59,6 +59,10 @@ func NewStepContext(context context.Context, c *v13.StoreSet, logger logr.Logger
 	return &ModuleContext{Context: context, StoreSet: c, Logger: logger, reconciler: r, Old: c.DeepCopy()}
 }
 
+func (c *ModuleContext) GetK8sClient() client.Client {
+	return c.reconciler.Client
+}
+
 type InitConfig struct {
 	Version           string
 	StoreImage        string
@@ -77,7 +81,7 @@ type Step struct {
 	//设置cluster的status,对比子资源目标和现在的声明情况
 	SetStatus func(c *v13.StoreSet, target, now Object) (needUpdate bool, updateObject Object, err error)
 	Del       func(ctx context.Context, c *v13.StoreSet, client client.Client) error
-	Next      func(c *v13.StoreSet) bool
+	Next      func(ctx *ModuleContext) bool
 
 	SetDefault         func(c *v13.StoreSet)
 	ValidateCreateStep func(c *v13.StoreSet) field.ErrorList
@@ -198,9 +202,7 @@ func (m *Step) update(ctx *ModuleContext) error {
 
 func (m *Step) create(ctx *ModuleContext) error {
 	render := m.Render(ctx.StoreSet)
-	if err := controllerutil.SetControllerReference(ctx.StoreSet, render, ctx.reconciler.Scheme); err != nil {
-		return err
-	}
+	_ = controllerutil.SetControllerReference(ctx.StoreSet, render, ctx.reconciler.Scheme)
 	ctx.reconciler.Recorder.Event(ctx.StoreSet, v12.EventTypeNormal, fmt.Sprintf("Creating-%s", m.Name), render.GetName())
 	err := ctx.reconciler.Create(ctx, render)
 	if err != nil && errors.IsAlreadyExists(err) {
@@ -215,7 +217,7 @@ func (m *Step) create(ctx *ModuleContext) error {
 func (m *Step) Ready(ctx *ModuleContext) bool {
 	if !m.hasSub() {
 		if m.Next != nil {
-			return m.Next(ctx.StoreSet)
+			return m.Next(ctx)
 		}
 		return true
 	} else {

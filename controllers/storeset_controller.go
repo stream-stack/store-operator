@@ -54,7 +54,6 @@ type StoreSetReconciler struct {
 //+kubebuilder:rbac:groups=core,resources=configmaps/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=configmaps/finalizers,verbs=update
 //+kubebuilder:rbac:groups=core,resources=persistentvolumes,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=core,resources=persistentvolumes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=core,resources=services/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=core,resources=services/finalizers,verbs=update
@@ -78,45 +77,6 @@ func (r *StoreSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	if err != nil {
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
-
-	//p := &corev1.PersistentVolume{}
-	//err = r.Client.Get(ctx, client.ObjectKey{
-	//	Namespace: "default",
-	//	Name:      "test-0",
-	//}, p)
-	//if err != nil && errors.IsNotFound(err) {
-	//	p = &corev1.PersistentVolume{
-	//		ObjectMeta: metav1.ObjectMeta{
-	//			Name:        "test-0",
-	//			Namespace:   cs.Namespace,
-	//			Labels:      cs.Labels,
-	//			Annotations: cs.Annotations,
-	//		},
-	//		Spec: corev1.PersistentVolumeSpec{
-	//			Capacity: corev1.ResourceList{
-	//				corev1.ResourceStorage: cs.Spec.Volume.Capacity,
-	//			},
-	//			PersistentVolumeSource: corev1.PersistentVolumeSource{
-	//				Local: cs.Spec.Volume.LocalVolumeSource,
-	//			},
-	//			AccessModes:                   []corev1.PersistentVolumeAccessMode{corev1.ReadWriteOnce},
-	//			PersistentVolumeReclaimPolicy: corev1.PersistentVolumeReclaimRetain,
-	//			StorageClassName:              cs.Name,
-	//			NodeAffinity:                  cs.Spec.Volume.NodeAffinity,
-	//		},
-	//	}
-	//	controllerutil.SetControllerReference(cs, p, r.Scheme)
-	//	err = r.Client.Create(ctx, p)
-	//	fmt.Println("create result:", err)
-	//	return ctrl.Result{}, nil
-	//}
-	//if err != nil {
-	//	fmt.Println("get error:", err)
-	//	return ctrl.Result{}, nil
-	//}
-	//fmt.Println("正常获取到pv==========", p)
-	//fmt.Println(rl)
-	//return ctrl.Result{}, nil
 
 	moduleContext := NewStepContext(ctx, cs, rl, r)
 	if !cs.ObjectMeta.DeletionTimestamp.IsZero() {
@@ -195,7 +155,6 @@ func ReconcileStoreSet(ctx *ModuleContext) (ctrl.Result, error) {
 		}
 	}
 	ctx.Info("End StoreSet Reconcile", "version", version)
-
 	return ctrl.Result{}, nil
 }
 

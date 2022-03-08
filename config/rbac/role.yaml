@@ -101,14 +101,6 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - persistentvolumes/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - ""
-  resources:
   - services
   verbs:
   - create

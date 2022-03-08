@@ -87,16 +87,16 @@ func buildStepByIndex(index int32) *controllers.Step {
 
 			return false, now, nil
 		},
-		Next: func(ctx *controllers.ModuleContext) bool {
+		Next: func(ctx *controllers.ModuleContext) (bool, error) {
 			//note: 命名空间中的资源(StoreSet)无法owner pv,cluster-scoped resource must not have a namespace-scoped owner, owner's namespace default
 			//只能判断是否创建成功, 如果创建成功, 则认为通过
 			p := &v12.PersistentVolume{}
 			p.Name = fmt.Sprintf(`%s-%d`, ctx.StoreSet.Name, index)
 			if err := ctx.GetK8sClient().Get(ctx.Context, client.ObjectKeyFromObject(p), p); err != nil {
 				ctx.Logger.Error(err, "get PersistentVolume error", "PersistentVolume.Name", p.Name)
-				return false
+				return false, err
 			}
-			return true
+			return true, nil
 			//return p.Status.Phase == v12.VolumeAvailable || p.Status.Phase == v12.VolumeBound
 		},
 		SetDefault: func(c *v1.StoreSet) {

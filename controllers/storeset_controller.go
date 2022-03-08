@@ -137,7 +137,14 @@ func ReconcileStoreSet(ctx *ModuleContext) (ctrl.Result, error) {
 				RequeueAfter: retryDuration,
 			}, err
 		}
-		if !module.Ready(ctx) {
+		ready, err := module.Ready(ctx)
+		if err != nil {
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: retryDuration,
+			}, err
+		}
+		if !ready {
 			break
 		}
 	}

@@ -70,8 +70,8 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 
 			return false, now, nil
 		},
-		Next: func(ctx *controllers.ModuleContext) bool {
-			return true
+		Next: func(ctx *controllers.ModuleContext) (bool, error) {
+			return true, nil
 		},
 		SetDefault: func(c *v1.StoreSet) {
 			if c.Spec.Volume.LocalVolumeSource == nil {
@@ -255,30 +255,33 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 
 			return false, now, nil
 		},
-		Next: func(ctx *controllers.ModuleContext) bool {
+		Next: func(ctx *controllers.ModuleContext) (bool, error) {
 			c := ctx.StoreSet
 			replicas := *c.Spec.Store.Replicas
 
 			if c.Status.StoreStatus.Workload.ReadyReplicas != replicas {
-				return false
+				return false, nil
 			}
-			infos := getLeaderInfos(ctx.Logger, c, replicas)
+			infos, err := getLeaderInfos(ctx.Logger, c, replicas)
+			if err != nil {
+				return false, err
+			}
 			if len(infos) == 1 {
-				return true
+				return true, nil
 			}
 			ctx.Logger.Info("当前leader数量", ctx.Name, len(infos))
 			leader := getMaxTermLeader(infos)
 			if leader == nil {
 				//没有leader
 				ctx.Logger.Info("当前leader数量为0,请检查pod是否正常")
-				return false
+				return false, fmt.Errorf("当前leader数量为0,请检查pod是否正常")
 			}
-			err := joinLeader(leader, infos)
+			err = joinLeader(leader, infos)
 			if err != nil {
-				return false
+				return false, err
 			}
 			closeConn(infos)
-			return true
+			return true, nil
 		},
 		SetDefault: func(c *v1.StoreSet) {
 			if c.Spec.Store.Image == "" {
@@ -348,7 +351,7 @@ func getMaxTermLeader(infos []*leaderInfo) *leaderInfo {
 	return result
 }
 
-func getLeaderInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) []*leaderInfo {
+func getLeaderInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) ([]*leaderInfo, error) {
 	var i int32
 	leaders := make([]*leaderInfo, 0)
 	for ; i < replicas; i++ {
@@ -361,7 +364,7 @@ func getLeaderInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) []*leade
 		conn, err := grpc.DialContext(timeout, address, grpc.WithInsecure())
 		if err != nil {
 			logger.Info("Grpc Dial error", "error", err, "address", address)
-			continue
+			return leaders, err
 		}
 
 		client := proto.NewRaftAdminClient(conn)
@@ -369,7 +372,7 @@ func getLeaderInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) []*leade
 		if err != nil {
 			logger.Info("Grpc call Status method error", "error", err, "address", address)
 			_ = conn.Close()
-			continue
+			return leaders, err
 		}
 		if stats.Stats[`state`] == `Leader` {
 			atoi, _ := strconv.Atoi(stats.Stats[`term`])
@@ -384,7 +387,7 @@ func getLeaderInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) []*leade
 			_ = conn.Close()
 		}
 	}
-	return leaders
+	return leaders, nil
 }
 
 const topologyKeyHostname = "kubernetes.io/hostname"

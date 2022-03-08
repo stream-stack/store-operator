@@ -81,7 +81,7 @@ type Step struct {
 	//设置cluster的status,对比子资源目标和现在的声明情况
 	SetStatus func(c *v13.StoreSet, target, now Object) (needUpdate bool, updateObject Object, err error)
 	Del       func(ctx context.Context, c *v13.StoreSet, client client.Client) error
-	Next      func(ctx *ModuleContext) bool
+	Next      func(ctx *ModuleContext) (bool, error)
 
 	SetDefault         func(c *v13.StoreSet)
 	ValidateCreateStep func(c *v13.StoreSet) field.ErrorList
@@ -214,20 +214,21 @@ func (m *Step) create(ctx *ModuleContext) error {
 	return err
 }
 
-func (m *Step) Ready(ctx *ModuleContext) bool {
+func (m *Step) Ready(ctx *ModuleContext) (bool, error) {
 	if !m.hasSub() {
 		if m.Next != nil {
 			return m.Next(ctx)
 		}
-		return true
+		return true, nil
 	} else {
 		for _, m := range m.Sub {
-			if !m.Ready(ctx) {
-				return false
+			ready, err := m.Ready(ctx)
+			if !ready {
+				return false, err
 			}
 		}
 	}
-	return true
+	return true, nil
 }
 
 func (m *Step) Delete(ctx *ModuleContext) error {

@@ -48,9 +48,9 @@ func NewPublisherSteps(cfg *controllers.InitConfig) {
 
 			return false, now, nil
 		},
-		Next: func(ctx *controllers.ModuleContext) bool {
+		Next: func(ctx *controllers.ModuleContext) (bool, error) {
 			c := ctx.StoreSet
-			return c.Status.PublisherStatus.Status.AvailableReplicas == *c.Spec.Publisher.Replicas
+			return c.Status.PublisherStatus.Status.AvailableReplicas == *c.Spec.Publisher.Replicas, nil
 		},
 		SetDefault: func(c *corev1.StoreSet) {
 			if c.Spec.Publisher.Image == "" {

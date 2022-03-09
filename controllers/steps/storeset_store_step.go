@@ -338,23 +338,26 @@ func joinLeader(logger logr.Logger, leader *nodeInfo, infos []*nodeInfo) error {
 			logger.Info("target address is leader address , ignore", "leader", leader.addr, "target", info.addr)
 			continue
 		}
+		exist := false
 		for _, server := range configuration.Servers {
 			if server.Address == info.addr {
-				logger.Info("target address exist leader configuration, ignore")
-				continue
-			} else {
-				_, err = leader.client.AddVoter(timeout, &proto.AddVoterRequest{
-					Id:      info.hostname,
-					Address: info.addr,
-				})
-				if err != nil {
-					logger.Info("leader join node error", "error", err, "target", info.addr)
-					return err
-				} else {
-					logger.Info("leader join node success", "target", info.addr)
-				}
+				exist = true
+				break
 			}
 		}
+		if exist {
+			logger.Info("target address exist leader configuration, ignore")
+			continue
+		}
+		_, err = leader.client.AddVoter(timeout, &proto.AddVoterRequest{
+			Id:      info.hostname,
+			Address: info.addr,
+		})
+		if err != nil {
+			logger.Info("leader join node error", "error", err, "target", info.addr)
+			return err
+		}
+		logger.Info("leader join node success", "target", info.addr)
 	}
 	return nil
 }

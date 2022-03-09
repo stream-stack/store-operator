@@ -54,20 +54,17 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 
 			t := target.(*v12.Service)
 			if !reflect.DeepEqual(t.Spec.Selector, o.Spec.Selector) {
-				o.Spec = t.Spec
+				o.Spec.Selector = t.Spec.Selector
 				return true, o, nil
 			}
-
 			if !reflect.DeepEqual(t.Spec.Ports, o.Spec.Ports) {
-				o.Spec = t.Spec
+				o.Spec.Ports = t.Spec.Ports
 				return true, o, nil
 			}
-
 			if !reflect.DeepEqual(t.Spec.Type, o.Spec.Type) {
-				o.Spec = t.Spec
+				o.Spec.Type = t.Spec.Type
 				return true, o, nil
 			}
-
 			return false, now, nil
 		},
 		Next: func(ctx *controllers.ModuleContext) (bool, error) {
@@ -262,25 +259,27 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 			if c.Status.StoreStatus.Workload.ReadyReplicas != replicas {
 				return false, nil
 			}
-			infos, err := getLeaderInfos(ctx.Logger, c, replicas)
+			infos, err := getNodeInfos(ctx.Logger, c, replicas)
 			if err != nil {
 				return false, err
 			}
-			if len(infos) == 1 {
-				return true, nil
-			}
+			defer closeConn(infos)
+			//if len(infos) == 1 {
+			//	ctx.Logger.Info("获取到唯一leader", "address", infos[0].addr)
+			//	return true, nil
+			//}
 			ctx.Logger.Info("当前leader数量", ctx.Name, len(infos))
-			leader := getMaxTermLeader(infos)
+			leader := getMaxAppliedIndexLeader(infos)
 			if leader == nil {
 				//没有leader
 				ctx.Logger.Info("当前leader数量为0,请检查pod是否正常")
 				return false, fmt.Errorf("当前leader数量为0,请检查pod是否正常")
 			}
-			err = joinLeader(leader, infos)
+			err = joinLeader(ctx.Logger, leader, infos)
 			if err != nil {
 				return false, err
 			}
-			closeConn(infos)
+
 			return true, nil
 		},
 		SetDefault: func(c *v1.StoreSet) {
@@ -304,6 +303,9 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 			if *now.Spec.Store.Replicas%2 == 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec.store.replicas"), now.Spec.Store.Replicas, "必须为奇数"))
 			}
+			if *now.Spec.Store.Replicas < *old.Spec.Store.Replicas {
+				allErrs = append(allErrs, field.Invalid(field.NewPath("spec.store.replicas"), now.Spec.Store.Replicas, "不支持缩容"))
+			}
 			return allErrs
 		},
 	}
@@ -315,45 +317,64 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 	})
 }
 
-func closeConn(infos []*leaderInfo) {
+func closeConn(infos []*nodeInfo) {
 	for _, info := range infos {
-		_ = info.conn.Close()
+		if info.conn != nil {
+			_ = info.conn.Close()
+		}
 	}
 }
 
-func joinLeader(leader *leaderInfo, infos []*leaderInfo) error {
+func joinLeader(logger logr.Logger, leader *nodeInfo, infos []*nodeInfo) error {
+	timeout, cancelFunc := context.WithTimeout(context.TODO(), defaultGrpcTimeOut)
+	defer cancelFunc()
+	configuration, err := leader.client.GetConfiguration(timeout, &proto.GetConfigurationRequest{})
+	if err != nil {
+		logger.Info("Leader Grpc Call GetConfiguration Error", "error", err)
+		return err
+	}
 	for _, info := range infos {
 		if info.addr == leader.addr {
+			logger.Info("target address is leader address , ignore", "leader", leader.addr, "target", info.addr)
 			continue
 		}
-		_, err := leader.client.AddVoter(context.TODO(), &proto.AddVoterRequest{
-			Id:            info.hostname,
-			Address:       info.addr,
-			PreviousIndex: 0,
-		})
-		if err != nil {
-			return err
+		for _, server := range configuration.Servers {
+			if server.Address == info.addr {
+				logger.Info("target address exist leader configuration, ignore")
+				continue
+			} else {
+				_, err = leader.client.AddVoter(timeout, &proto.AddVoterRequest{
+					Id:      info.hostname,
+					Address: info.addr,
+				})
+				if err != nil {
+					logger.Info("leader join node error", "error", err, "target", info.addr)
+					return err
+				} else {
+					logger.Info("leader join node success", "target", info.addr)
+				}
+			}
 		}
 	}
 	return nil
 }
 
-func getMaxTermLeader(infos []*leaderInfo) *leaderInfo {
+func getMaxAppliedIndexLeader(infos []*nodeInfo) *nodeInfo {
 	if len(infos) == 0 {
 		return nil
 	}
 	var result = infos[0]
 	for _, info := range infos {
-		if result.term < info.term {
+		if result.appliedIndex < info.appliedIndex && info.state == `Leader` {
 			result = info
 		}
 	}
 	return result
 }
 
-func getLeaderInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) ([]*leaderInfo, error) {
+func getNodeInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) ([]*nodeInfo, error) {
 	var i int32
-	leaders := make([]*leaderInfo, 0)
+	nodes := make([]*nodeInfo, 0)
 	for ; i < replicas; i++ {
 		hostname := fmt.Sprintf(`%s-%d`, c.Status.StoreStatus.WorkloadName, i)
 		address := fmt.Sprintf(`%s.%s.%s.svc:%d`, hostname, c.Status.StoreStatus.ServiceName, c.Namespace, containerPort.IntVal)
@@ -364,7 +385,7 @@ func getLeaderInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) ([]*lead
 		conn, err := grpc.DialContext(timeout, address, grpc.WithInsecure())
 		if err != nil {
 			logger.Info("Grpc Dial error", "error", err, "address", address)
-			return leaders, err
+			return nodes, err
 		}
 
 		client := proto.NewRaftAdminClient(conn)
@@ -372,22 +393,19 @@ func getLeaderInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) ([]*lead
 		if err != nil {
 			logger.Info("Grpc call Status method error", "error", err, "address", address)
 			_ = conn.Close()
-			return leaders, err
+			return nodes, err
 		}
-		if stats.Stats[`state`] == `Leader` {
-			atoi, _ := strconv.Atoi(stats.Stats[`term`])
-			leaders = append(leaders, &leaderInfo{
-				hostname: hostname,
-				addr:     address,
-				conn:     conn,
-				term:     atoi,
-				client:   client,
-			})
-		} else {
-			_ = conn.Close()
-		}
+		atoi, _ := strconv.Atoi(stats.Stats[`applied_index`])
+		nodes = append(nodes, &nodeInfo{
+			hostname:     hostname,
+			addr:         address,
+			conn:         conn,
+			appliedIndex: atoi,
+			state:        stats.Stats[`state`],
+			client:       client,
+		})
 	}
-	return leaders, nil
+	return nodes, nil
 }
 
 const topologyKeyHostname = "kubernetes.io/hostname"
@@ -395,10 +413,11 @@ const defaultGrpcTimeOut = time.Second * 5
 
 var containerPort = intstr.FromInt(50051)
 
-type leaderInfo struct {
-	addr     string
-	conn     *grpc.ClientConn
-	term     int
-	client   proto.RaftAdminClient
-	hostname string
+type nodeInfo struct {
+	addr         string
+	conn         *grpc.ClientConn
+	appliedIndex int
+	client       proto.RaftAdminClient
+	hostname     string
+	state        string
 }

@@ -29,7 +29,7 @@ kubectl delete storeset test
 
 kubectl apply -f core_v1_storeset.yaml
 
-make docker-build docker-push IMG=ccr.ccs.tencentyun.com/stream/stream:latest
+make docker-build docker-push IMG=ccr.ccs.tencentyun.com/stream/operator:latest
 make deploy IMG=ccr.ccs.tencentyun.com/stream/stream:latest
 
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.7.1/cert-manager.yaml

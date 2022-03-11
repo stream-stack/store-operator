@@ -110,6 +110,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Subscription")
 		os.Exit(1)
 	}
+	if err = (&knativev1.Broker{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Broker")
+		os.Exit(1)
+	}
+	if err = (&knativev1.Subscription{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "Subscription")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

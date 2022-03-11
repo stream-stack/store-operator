@@ -2,7 +2,7 @@ package store_set_steps
 
 import (
 	"fmt"
-	v1 "github.com/stream-stack/store-operator/api/v1"
+	v13 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -30,7 +30,7 @@ func NewLocalPersistentVolumeSteps(cfg *InitConfig) *base.Step {
 		Name:  "localPersistentVolume",
 		Sub:   steps,
 		SetDefault: func(t base.StepObject) {
-			c := t.(*v1.StoreSet)
+			c := t.(*v13.StoreSet)
 			//全局label处理,加入app:xxx(name)-storeset,version:arm-1.0.0标签
 			_, ok := c.Labels[AppLabelKey]
 			if !ok {
@@ -47,7 +47,7 @@ func buildStepByIndex(index int32) *base.Step {
 			return &v12.PersistentVolume{}
 		},
 		Render: func(t base.StepObject) base.StepObject {
-			c := t.(*v1.StoreSet)
+			c := t.(*v13.StoreSet)
 			filesystem := v12.PersistentVolumeFilesystem
 			return &v12.PersistentVolume{
 				ObjectMeta: metav1.ObjectMeta{
@@ -71,9 +71,9 @@ func buildStepByIndex(index int32) *base.Step {
 			}
 		},
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
-			c := owner.(*v1.StoreSet)
+			c := owner.(*v13.StoreSet)
 			o := now.(*v12.PersistentVolume)
-			c.Status.VolumeStatus = v1.LocalPvStatus{
+			c.Status.VolumeStatus = v13.LocalPvStatus{
 				Name:   c.Name,
 				Status: o.Status,
 			}
@@ -99,7 +99,7 @@ func buildStepByIndex(index int32) *base.Step {
 			//return p.Status.Phase == v12.VolumeAvailable || p.Status.Phase == v12.VolumeBound
 		},
 		SetDefault: func(t base.StepObject) {
-			c := t.(*v1.StoreSet)
+			c := t.(*v13.StoreSet)
 			if c.Spec.Volume.LocalVolumeSource == nil {
 				c.Spec.Volume.LocalVolumeSource = &v12.LocalVolumeSource{
 					Path: DefaultVolumePath,

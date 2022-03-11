@@ -1,0 +1,6 @@
+apiVersion: knative.stream-stack.tanx/v1
+kind: Broker
+metadata:
+  name: broker-sample
+spec:
+  # TODO(user): Add fields here

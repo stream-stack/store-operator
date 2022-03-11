@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package storeset
 
 import (
 	"context"
 	_ "embed"
+	v12 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -28,8 +29,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	v1 "github.com/stream-stack/store-operator/api/v1"
 )
 
 // StoreSetReconciler reconciles a StoreSet object
@@ -83,20 +82,20 @@ func (r *StoreSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	rl := l.WithValues("StoreSet", req.NamespacedName)
 
 	//TODO:整理ctx参数至Reconcile方法中
-	return base.NewStepContext(ctx, rl, r, statusDeepEqual).Reconcile(req.NamespacedName, &v1.StoreSet{}, Steps)
+	return base.NewStepContext(ctx, rl, r, statusDeepEqual).Reconcile(req.NamespacedName, &v12.StoreSet{}, Steps)
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *StoreSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&v1.StoreSet{}).Owns(&appsv1.Deployment{}).Owns(&appsv1.StatefulSet{}).Owns(&corev1.Service{}).
+		For(&v12.StoreSet{}).Owns(&appsv1.Deployment{}).Owns(&appsv1.StatefulSet{}).Owns(&corev1.Service{}).
 		Owns(&corev1.ConfigMap{}).Owns(&corev1.PersistentVolume{}).
 		Complete(r)
 }
 
 func statusDeepEqual(now base.StepObject, old runtime.Object) bool {
-	nowSet := now.(*v1.StoreSet)
-	oldSet := old.(*v1.StoreSet)
+	nowSet := now.(*v12.StoreSet)
+	oldSet := old.(*v12.StoreSet)
 	return reflect.DeepEqual(nowSet.Status, oldSet.Status)
 }
 

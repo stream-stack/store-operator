@@ -3,7 +3,7 @@ package store_set_steps
 import (
 	_ "embed"
 	"fmt"
-	corev1 "github.com/stream-stack/store-operator/api/v1"
+	v12 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/apps/v1"
@@ -20,7 +20,7 @@ func NewPublisherSteps(cfg *InitConfig) *base.Step {
 			return &v1.Deployment{}
 		},
 		Render: func(t base.StepObject) base.StepObject {
-			c := t.(*corev1.StoreSet)
+			c := t.(*v12.StoreSet)
 			d := &v1.Deployment{}
 			_ = yaml.Unmarshal(deptTemplate, d)
 			d.Name = c.Name
@@ -37,7 +37,7 @@ func NewPublisherSteps(cfg *InitConfig) *base.Step {
 			return d
 		},
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
-			c := owner.(*corev1.StoreSet)
+			c := owner.(*v12.StoreSet)
 			o := now.(*v1.Deployment)
 			c.Status.PublisherStatus.Name = c.Name
 			c.Status.PublisherStatus.Status = o.Status
@@ -51,11 +51,11 @@ func NewPublisherSteps(cfg *InitConfig) *base.Step {
 			return false, now, nil
 		},
 		Next: func(ctx *base.StepContext) (bool, error) {
-			c := ctx.StepObject.(*corev1.StoreSet)
+			c := ctx.StepObject.(*v12.StoreSet)
 			return c.Status.PublisherStatus.Status.AvailableReplicas == *c.Spec.Publisher.Replicas, nil
 		},
 		SetDefault: func(t base.StepObject) {
-			c := t.(*corev1.StoreSet)
+			c := t.(*v12.StoreSet)
 			if c.Spec.Publisher.Image == "" {
 				c.Spec.Publisher.Image = cfg.PublisherImage
 			}

@@ -18,9 +18,13 @@ package main
 
 import (
 	"flag"
-	"github.com/stream-stack/store-operator/controllers"
-	_ "github.com/stream-stack/store-operator/controllers/store_set_steps"
 	"os"
+
+	v1 "github.com/stream-stack/store-operator/apis/storeset/v1"
+	"github.com/stream-stack/store-operator/controllers/storeset"
+
+	_ "github.com/stream-stack/store-operator/controllers/storeset/store_set_steps"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -32,7 +36,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	corev1 "github.com/stream-stack/store-operator/api/v1"
+	knativev1 "github.com/stream-stack/store-operator/apis/knative/v1"
+	knativecontrollers "github.com/stream-stack/store-operator/controllers/knative"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -44,7 +49,8 @@ var (
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(corev1.AddToScheme(scheme))
+	utilruntime.Must(v1.AddToScheme(scheme))
+	utilruntime.Must(knativev1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -78,7 +84,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.StoreSetReconciler{
+	if err = (&storeset.StoreSetReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
 		Recorder: mgr.GetEventRecorderFor("operator"),
@@ -86,8 +92,22 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "StoreSet")
 		os.Exit(1)
 	}
-	if err = (&corev1.StoreSet{}).SetupWebhookWithManager(mgr); err != nil {
+	if err = (&v1.StoreSet{}).SetupWebhookWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create webhook", "webhook", "StoreSet")
+		os.Exit(1)
+	}
+	if err = (&knativecontrollers.BrokerReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Broker")
+		os.Exit(1)
+	}
+	if err = (&knativecontrollers.SubscriptionReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Subscription")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

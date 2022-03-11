@@ -1,6 +1,7 @@
 domain: stream-stack.tanx
 layout:
 - go.kubebuilder.io/v3
+multigroup: true
 projectName: store-operator
 repo: github.com/stream-stack/store-operator
 resources:
@@ -17,4 +18,22 @@ resources:
     defaulting: true
     validation: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: stream-stack.tanx
+  group: knative
+  kind: Broker
+  path: github.com/stream-stack/store-operator/apis/knative/v1
+  version: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: stream-stack.tanx
+  group: knative
+  kind: Subscription
+  path: github.com/stream-stack/store-operator/apis/knative/v1
+  version: v1
 version: "3"

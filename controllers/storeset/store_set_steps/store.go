@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/Jille/raftadmin/proto"
 	"github.com/go-logr/logr"
-	v1 "github.com/stream-stack/store-operator/api/v1"
+	v14 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	"google.golang.org/grpc"
 	v13 "k8s.io/api/apps/v1"
@@ -26,7 +26,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			return &v12.Service{}
 		},
 		Render: func(set base.StepObject) base.StepObject {
-			c := set.(*v1.StoreSet)
+			c := set.(*v14.StoreSet)
 			return &v12.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        c.Name,
@@ -49,7 +49,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			}
 		},
 		SetStatus: func(set base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
-			c := set.(*v1.StoreSet)
+			c := set.(*v14.StoreSet)
 			o := now.(*v12.Service)
 			c.Status.StoreStatus.ServiceName = o.Name
 			c.Status.StoreStatus.Service = o.Status
@@ -73,7 +73,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			return true, nil
 		},
 		SetDefault: func(set base.StepObject) {
-			c := set.(*v1.StoreSet)
+			c := set.(*v14.StoreSet)
 			if c.Spec.Volume.LocalVolumeSource == nil {
 				c.Spec.Volume.LocalVolumeSource = &v12.LocalVolumeSource{
 					Path: DefaultVolumePath,
@@ -87,7 +87,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			return &v13.StatefulSet{}
 		},
 		Render: func(set base.StepObject) base.StepObject {
-			c := set.(*v1.StoreSet)
+			c := set.(*v14.StoreSet)
 			filesystem := v12.PersistentVolumeFilesystem
 			pvcName := c.Name
 			volumeClaim := v12.PersistentVolumeClaim{
@@ -244,7 +244,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			}
 		},
 		SetStatus: func(set base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
-			c := set.(*v1.StoreSet)
+			c := set.(*v14.StoreSet)
 			o := now.(*v13.StatefulSet)
 			c.Status.StoreStatus.Workload = o.Status
 			c.Status.StoreStatus.WorkloadName = o.Name
@@ -258,7 +258,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			return false, now, nil
 		},
 		Next: func(ctx *base.StepContext) (bool, error) {
-			c := ctx.StepObject.(*v1.StoreSet)
+			c := ctx.StepObject.(*v14.StoreSet)
 			replicas := *c.Spec.Store.Replicas
 
 			if c.Status.StoreStatus.Workload.ReadyReplicas != replicas {
@@ -285,7 +285,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			return true, nil
 		},
 		SetDefault: func(set base.StepObject) {
-			c := set.(*v1.StoreSet)
+			c := set.(*v14.StoreSet)
 			if c.Spec.Store.Image == "" {
 				c.Spec.Store.Image = cfg.StoreImage
 			}
@@ -295,7 +295,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 
 		},
 		ValidateCreateStep: func(set base.StepObject) field.ErrorList {
-			c := set.(*v1.StoreSet)
+			c := set.(*v14.StoreSet)
 			var allErrs field.ErrorList
 			if *c.Spec.Store.Replicas%2 == 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec.store.replicas"), c.Spec.Store.Replicas, "必须为奇数"))
@@ -303,8 +303,8 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			return allErrs
 		},
 		ValidateUpdateStep: func(nowSet base.StepObject, oldSet base.StepObject) field.ErrorList {
-			now := nowSet.(*v1.StoreSet)
-			old := oldSet.(*v1.StoreSet)
+			now := nowSet.(*v14.StoreSet)
+			old := oldSet.(*v14.StoreSet)
 			var allErrs field.ErrorList
 			if *now.Spec.Store.Replicas%2 == 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec.store.replicas"), now.Spec.Store.Replicas, "必须为奇数"))
@@ -381,7 +381,7 @@ func getMaxAppliedIndexLeader(infos []*nodeInfo) *nodeInfo {
 	return result
 }
 
-func getNodeInfos(logger logr.Logger, c *v1.StoreSet, replicas int32) ([]*nodeInfo, error) {
+func getNodeInfos(logger logr.Logger, c *v14.StoreSet, replicas int32) ([]*nodeInfo, error) {
 	var i int32
 	nodes := make([]*nodeInfo, 0)
 	for ; i < replicas; i++ {

@@ -20,7 +20,7 @@ spec:
       path: "/data"
   store:
     replicas: 3
-    image: "ccr.ccs.tencentyun.com/stream/stream:store-v1"
+    image: "ccr.ccs.tencentyun.com/stream/store:latest"
   publisher:
     replicas: 1
-    image: "ccr.ccs.tencentyun.com/stream/stream:publisher-v1"
+    image: "ccr.ccs.tencentyun.com/stream/publisher:latest"

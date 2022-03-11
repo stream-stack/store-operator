@@ -1,4 +1,4 @@
-package steps
+package store_set_steps
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"github.com/Jille/raftadmin/proto"
 	"github.com/go-logr/logr"
 	v1 "github.com/stream-stack/store-operator/api/v1"
-	"github.com/stream-stack/store-operator/controllers"
+	"github.com/stream-stack/store-operator/pkg/base"
 	"google.golang.org/grpc"
 	v13 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
@@ -19,13 +19,14 @@ import (
 	"time"
 )
 
-func NewStoreSteps(cfg *controllers.InitConfig) {
-	var service = &controllers.Step{
+func NewStoreSteps(cfg *InitConfig) *base.Step {
+	var service = &base.Step{
 		Name: "storeService",
-		GetObj: func() controllers.Object {
+		GetObj: func() base.StepObject {
 			return &v12.Service{}
 		},
-		Render: func(c *v1.StoreSet) controllers.Object {
+		Render: func(set base.StepObject) base.StepObject {
+			c := set.(*v1.StoreSet)
 			return &v12.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        c.Name,
@@ -47,7 +48,8 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 				},
 			}
 		},
-		SetStatus: func(c *v1.StoreSet, target, now controllers.Object) (needUpdate bool, updateObject controllers.Object, err error) {
+		SetStatus: func(set base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
+			c := set.(*v1.StoreSet)
 			o := now.(*v12.Service)
 			c.Status.StoreStatus.ServiceName = o.Name
 			c.Status.StoreStatus.Service = o.Status
@@ -67,10 +69,11 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 			}
 			return false, now, nil
 		},
-		Next: func(ctx *controllers.ModuleContext) (bool, error) {
+		Next: func(ctx *base.StepContext) (bool, error) {
 			return true, nil
 		},
-		SetDefault: func(c *v1.StoreSet) {
+		SetDefault: func(set base.StepObject) {
+			c := set.(*v1.StoreSet)
 			if c.Spec.Volume.LocalVolumeSource == nil {
 				c.Spec.Volume.LocalVolumeSource = &v12.LocalVolumeSource{
 					Path: DefaultVolumePath,
@@ -78,12 +81,13 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 			}
 		},
 	}
-	var statefulsets = &controllers.Step{
+	var statefulsets = &base.Step{
 		Name: "storeStatefulset",
-		GetObj: func() controllers.Object {
+		GetObj: func() base.StepObject {
 			return &v13.StatefulSet{}
 		},
-		Render: func(c *v1.StoreSet) controllers.Object {
+		Render: func(set base.StepObject) base.StepObject {
+			c := set.(*v1.StoreSet)
 			filesystem := v12.PersistentVolumeFilesystem
 			pvcName := c.Name
 			volumeClaim := v12.PersistentVolumeClaim{
@@ -239,7 +243,8 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 				},
 			}
 		},
-		SetStatus: func(c *v1.StoreSet, target, now controllers.Object) (needUpdate bool, updateObject controllers.Object, err error) {
+		SetStatus: func(set base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
+			c := set.(*v1.StoreSet)
 			o := now.(*v13.StatefulSet)
 			c.Status.StoreStatus.Workload = o.Status
 			c.Status.StoreStatus.WorkloadName = o.Name
@@ -252,8 +257,8 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 
 			return false, now, nil
 		},
-		Next: func(ctx *controllers.ModuleContext) (bool, error) {
-			c := ctx.StoreSet
+		Next: func(ctx *base.StepContext) (bool, error) {
+			c := ctx.StepObject.(*v1.StoreSet)
 			replicas := *c.Spec.Store.Replicas
 
 			if c.Status.StoreStatus.Workload.ReadyReplicas != replicas {
@@ -264,17 +269,14 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 				return false, err
 			}
 			defer closeConn(infos)
-			//if len(infos) == 1 {
-			//	ctx.Logger.Info("获取到唯一leader", "address", infos[0].addr)
-			//	return true, nil
-			//}
-			ctx.Logger.Info("当前leader数量", ctx.Name, len(infos))
+			ctx.Logger.Info("当前节点数量", ctx.StepObject.GetName(), len(infos))
 			leader := getMaxAppliedIndexLeader(infos)
+			//没有leader
 			if leader == nil {
-				//没有leader
 				ctx.Logger.Info("当前leader数量为0,请检查pod是否正常")
 				return false, fmt.Errorf("当前leader数量为0,请检查pod是否正常")
 			}
+			ctx.Logger.Info("获取到leader,开始检查其余节点是否加入leader", "address", infos[0].addr)
 			err = joinLeader(ctx.Logger, leader, infos)
 			if err != nil {
 				return false, err
@@ -282,7 +284,8 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 
 			return true, nil
 		},
-		SetDefault: func(c *v1.StoreSet) {
+		SetDefault: func(set base.StepObject) {
+			c := set.(*v1.StoreSet)
 			if c.Spec.Store.Image == "" {
 				c.Spec.Store.Image = cfg.StoreImage
 			}
@@ -291,14 +294,17 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 			}
 
 		},
-		ValidateCreateStep: func(c *v1.StoreSet) field.ErrorList {
+		ValidateCreateStep: func(set base.StepObject) field.ErrorList {
+			c := set.(*v1.StoreSet)
 			var allErrs field.ErrorList
 			if *c.Spec.Store.Replicas%2 == 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec.store.replicas"), c.Spec.Store.Replicas, "必须为奇数"))
 			}
 			return allErrs
 		},
-		ValidateUpdateStep: func(now *v1.StoreSet, old *v1.StoreSet) field.ErrorList {
+		ValidateUpdateStep: func(nowSet base.StepObject, oldSet base.StepObject) field.ErrorList {
+			now := nowSet.(*v1.StoreSet)
+			old := oldSet.(*v1.StoreSet)
 			var allErrs field.ErrorList
 			if *now.Spec.Store.Replicas%2 == 0 {
 				allErrs = append(allErrs, field.Invalid(field.NewPath("spec.store.replicas"), now.Spec.Store.Replicas, "必须为奇数"))
@@ -310,11 +316,11 @@ func NewStoreSteps(cfg *controllers.InitConfig) {
 		},
 	}
 
-	controllers.AddSteps(cfg.Version, &controllers.Step{
+	return &base.Step{
 		Order: 20,
 		Name:  "store",
-		Sub:   []*controllers.Step{service, statefulsets},
-	})
+		Sub:   []*base.Step{service, statefulsets},
+	}
 }
 
 func closeConn(infos []*nodeInfo) {

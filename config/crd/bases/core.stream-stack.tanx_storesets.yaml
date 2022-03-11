@@ -51,8 +51,6 @@ spec:
                     format: int32
                     type: integer
                 type: object
-              version:
-                type: string
               volume:
                 properties:
                   capacity:

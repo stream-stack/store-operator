@@ -18,12 +18,9 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"github.com/stream-stack/store-operator/controllers"
+	_ "github.com/stream-stack/store-operator/controllers/store_set_steps"
 	"os"
-	"strings"
-
-	_ "github.com/stream-stack/store-operator/controllers/storeset-arm"
-	_ "github.com/stream-stack/store-operator/controllers/storeset-x86"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -36,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	corev1 "github.com/stream-stack/store-operator/api/v1"
-	"github.com/stream-stack/store-operator/controllers"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -68,15 +64,6 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-
-	fmt.Println("目前支持的版本情况:")
-	for v, modules := range controllers.VersionsModules {
-		names := make([]string, len(modules))
-		for i, module := range modules {
-			names[i] = module.Name
-		}
-		fmt.Printf("版本:%s,模块[%s]\n", v, strings.Join(names, ","))
-	}
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,

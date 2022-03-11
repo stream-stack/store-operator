@@ -44,10 +44,6 @@ type PublisherDeptSpec struct {
 
 // StoreSetSpec defines the desired state of StoreSet
 type StoreSetSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	Version   string               `json:"version,omitempty"`
 	Volume    LocalPvSpec          `json:"volume,omitempty"`
 	Store     StoreStatefulSetSpec `json:"store,omitempty"`
 	Publisher PublisherDeptSpec    `json:"publisher,omitempty"`

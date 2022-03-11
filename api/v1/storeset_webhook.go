@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	"github.com/stream-stack/store-operator/pkg/base"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -27,6 +28,9 @@ import (
 
 // log is for logging in this package.
 var storesetlog = logf.Log.WithName("storeset-resource")
+
+var StoreSetValidators = make([]base.ResourceValidator, 0)
+var StoreSetDefaulters = make([]base.ResourceDefaulter, 0)
 
 func (r *StoreSet) SetupWebhookWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewWebhookManagedBy(mgr).
@@ -45,9 +49,7 @@ func (r *StoreSet) Default() {
 	storesetlog.Info("default", "name", r.Name)
 
 	// TODO(user): fill in your defaulting logic.
-	v := getVersion(r.Spec.Version)
-	defaulters := VersionedDefaulters[v]
-	for _, defaulter := range defaulters {
+	for _, defaulter := range StoreSetDefaulters {
 		defaulter.Default(r)
 	}
 }
@@ -63,8 +65,7 @@ func (r *StoreSet) ValidateCreate() error {
 
 	var allErrs field.ErrorList
 
-	validators := VersionedValidators[r.Spec.Version]
-	for _, v := range validators {
+	for _, v := range StoreSetValidators {
 		allErrs = append(allErrs, v.ValidateCreate(r)...)
 	}
 
@@ -81,8 +82,7 @@ func (r *StoreSet) ValidateUpdate(old runtime.Object) error {
 	oldC := old.(*StoreSet)
 	var allErrs field.ErrorList
 
-	validators := VersionedValidators[r.Spec.Version]
-	for _, v := range validators {
+	for _, v := range StoreSetValidators {
 		allErrs = append(allErrs, v.ValidateUpdate(oldC, r)...)
 	}
 

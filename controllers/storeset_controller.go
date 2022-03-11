@@ -19,14 +19,12 @@ package controllers
 import (
 	"context"
 	_ "embed"
-	"fmt"
+	"github.com/stream-stack/store-operator/pkg/base"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/record"
 	"reflect"
-	"time"
-
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -39,6 +37,18 @@ type StoreSetReconciler struct {
 	client.Client
 	Scheme   *runtime.Scheme
 	Recorder record.EventRecorder
+}
+
+func (r *StoreSetReconciler) GetClient() client.Client {
+	return r.Client
+}
+
+func (r *StoreSetReconciler) GetScheme() *runtime.Scheme {
+	return r.Scheme
+}
+
+func (r *StoreSetReconciler) GetRecorder() record.EventRecorder {
+	return r.Recorder
 }
 
 //+kubebuilder:rbac:groups=core.stream-stack.tanx,resources=storesets,verbs=get;list;watch;create;update;patch;delete
@@ -72,97 +82,8 @@ func (r *StoreSetReconciler) Reconcile(ctx context.Context, req ctrl.Request) (c
 	l := log.FromContext(ctx)
 	rl := l.WithValues("StoreSet", req.NamespacedName)
 
-	cs := &v1.StoreSet{}
-	err := r.Client.Get(ctx, req.NamespacedName, cs)
-	if err != nil {
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	moduleContext := NewStepContext(ctx, cs, rl, r)
-	if !cs.ObjectMeta.DeletionTimestamp.IsZero() {
-		return deleteStoreSet(moduleContext)
-	}
-
-	return ReconcileStoreSet(moduleContext)
-}
-
-func deleteStoreSet(ctx *ModuleContext) (ctrl.Result, error) {
-	version := ctx.Spec.Version
-	modules, ok := VersionsModules[version]
-	if !ok {
-		return ctrl.Result{}, fmt.Errorf("not support version %s", version)
-	}
-	total := len(modules)
-	for index, module := range modules {
-		moduleName := module.Name
-		moduleString := fmt.Sprintf("[%v/%v]%s ", index+1, total, moduleName)
-		if err := module.Delete(ctx); err != nil {
-			ctx.reconciler.Recorder.Event(ctx, corev1.EventTypeWarning, "ModuleDeleteError", fmt.Sprintf("[%s] Error:%v", moduleName, err))
-			ctx.Info(moduleString+"module delete error", "error", err)
-			return ctrl.Result{}, err
-		}
-		ctx.Info(moduleString + "module delete success")
-	}
-
-	ctx.SetFinalizers([]string{})
-	ctx.Info("remove Finalizers...")
-	if err := ctx.reconciler.Update(ctx, ctx.StoreSet); err != nil {
-		ctx.Info("remove Finalizers error", "error", err)
-		return ctrl.Result{}, err
-	}
-	ctx.Info("delete StoreSet finish", "name", ctx.Name, "namespace", ctx.Namespace)
-
-	return ctrl.Result{}, nil
-}
-
-var retryDuration = time.Second * 1
-
-func ReconcileStoreSet(ctx *ModuleContext) (ctrl.Result, error) {
-	version := ctx.Spec.Version
-	modules, ok := VersionsModules[version]
-	if !ok {
-		return ctrl.Result{Requeue: false}, fmt.Errorf("unsupport version %s", version)
-	}
-	ctx.Info("Begin StoreSet Reconcile", "version", version, "name", ctx.Name, "namespace", ctx.Namespace)
-	total := len(modules)
-	for index, module := range modules {
-		moduleName := module.Name
-		moduleString := fmt.Sprintf("[%v/%v]%s ", index+1, total, moduleName)
-		ctx.Info(moduleString, "version", version, "name", ctx.Name, "namespace", ctx.Namespace)
-		if err := module.Reconcile(ctx); err != nil {
-			ctx.Info(moduleString+"module not exist,create error", "error", err)
-			ctx.reconciler.Recorder.Event(ctx, corev1.EventTypeWarning, "ReconcileError", fmt.Sprintf("[%s] Error:%v", moduleName, err))
-			return ctrl.Result{
-				Requeue:      true,
-				RequeueAfter: retryDuration,
-			}, err
-		}
-		ready, err := module.Ready(ctx)
-		if err != nil {
-			return ctrl.Result{
-				Requeue:      true,
-				RequeueAfter: retryDuration,
-			}, err
-		}
-		if !ready {
-			break
-		}
-	}
-	ctx.Info("update StoreSet(crd) status")
-	if len(ctx.GetFinalizers()) == 0 {
-		ctx.SetFinalizers([]string{FinalizerName})
-	}
-	if !reflect.DeepEqual(ctx.Old.Status, ctx.StoreSet.Status) {
-		if err := ctx.reconciler.Client.Status().Update(ctx, ctx.StoreSet); err != nil {
-			ctx.Info("update StoreSet(crd) status error", "error", err)
-			return ctrl.Result{
-				Requeue:      true,
-				RequeueAfter: retryDuration,
-			}, err
-		}
-	}
-	ctx.Info("End StoreSet Reconcile", "version", version)
-	return ctrl.Result{}, nil
+	//TODO:整理ctx参数至Reconcile方法中
+	return base.NewStepContext(ctx, rl, r, statusDeepEqual).Reconcile(req.NamespacedName, &v1.StoreSet{}, Steps)
 }
 
 // SetupWithManager sets up the controller with the Manager.
@@ -172,3 +93,11 @@ func (r *StoreSetReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Owns(&corev1.ConfigMap{}).Owns(&corev1.PersistentVolume{}).
 		Complete(r)
 }
+
+func statusDeepEqual(now base.StepObject, old runtime.Object) bool {
+	nowSet := now.(*v1.StoreSet)
+	oldSet := old.(*v1.StoreSet)
+	return reflect.DeepEqual(nowSet.Status, oldSet.Status)
+}
+
+var Steps = make([]*base.Step, 0)

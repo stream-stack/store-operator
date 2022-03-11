@@ -1,10 +1,10 @@
-package steps
+package store_set_steps
 
 import (
 	_ "embed"
 	"fmt"
 	corev1 "github.com/stream-stack/store-operator/api/v1"
-	"github.com/stream-stack/store-operator/controllers"
+	"github.com/stream-stack/store-operator/pkg/base"
 	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/apps/v1"
 	"reflect"
@@ -13,13 +13,14 @@ import (
 //go:embed publisher_template.yaml
 var deptTemplate []byte
 
-func NewPublisherSteps(cfg *controllers.InitConfig) {
-	var publisher = &controllers.Step{
+func NewPublisherSteps(cfg *InitConfig) *base.Step {
+	var publisher = &base.Step{
 		Name: "publisherDept",
-		GetObj: func() controllers.Object {
+		GetObj: func() base.StepObject {
 			return &v1.Deployment{}
 		},
-		Render: func(c *corev1.StoreSet) controllers.Object {
+		Render: func(t base.StepObject) base.StepObject {
+			c := t.(*corev1.StoreSet)
 			d := &v1.Deployment{}
 			_ = yaml.Unmarshal(deptTemplate, d)
 			d.Name = c.Name
@@ -35,7 +36,8 @@ func NewPublisherSteps(cfg *controllers.InitConfig) {
 
 			return d
 		},
-		SetStatus: func(c *corev1.StoreSet, target, now controllers.Object) (needUpdate bool, updateObject controllers.Object, err error) {
+		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
+			c := owner.(*corev1.StoreSet)
 			o := now.(*v1.Deployment)
 			c.Status.PublisherStatus.Name = c.Name
 			c.Status.PublisherStatus.Status = o.Status
@@ -48,11 +50,12 @@ func NewPublisherSteps(cfg *controllers.InitConfig) {
 
 			return false, now, nil
 		},
-		Next: func(ctx *controllers.ModuleContext) (bool, error) {
-			c := ctx.StoreSet
+		Next: func(ctx *base.StepContext) (bool, error) {
+			c := ctx.StepObject.(*corev1.StoreSet)
 			return c.Status.PublisherStatus.Status.AvailableReplicas == *c.Spec.Publisher.Replicas, nil
 		},
-		SetDefault: func(c *corev1.StoreSet) {
+		SetDefault: func(t base.StepObject) {
+			c := t.(*corev1.StoreSet)
 			if c.Spec.Publisher.Image == "" {
 				c.Spec.Publisher.Image = cfg.PublisherImage
 			}
@@ -62,10 +65,10 @@ func NewPublisherSteps(cfg *controllers.InitConfig) {
 		},
 	}
 
-	var step = &controllers.Step{
+	var step = &base.Step{
 		Order: 30,
 		Name:  "publisher",
-		Sub:   []*controllers.Step{publisher},
+		Sub:   []*base.Step{publisher},
 	}
-	controllers.AddSteps(cfg.Version, step)
+	return step
 }

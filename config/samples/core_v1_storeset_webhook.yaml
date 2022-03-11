@@ -5,7 +5,6 @@ metadata:
   labels:
     test: test
 spec:
-  version: "x86-1.0.0"
   volume:
     nodeAffinity:
       required:

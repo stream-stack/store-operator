@@ -317,9 +317,8 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 	}
 
 	return &base.Step{
-		Order: 20,
-		Name:  "store",
-		Sub:   []*base.Step{service, statefulsets},
+		Name: "store",
+		Sub:  []*base.Step{service, statefulsets},
 	}
 }
 

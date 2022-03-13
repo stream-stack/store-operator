@@ -127,9 +127,8 @@ func (c *StepContext) reconcile(steps []*Step, oldObject runtime.Object) (ctrl.R
 }
 
 type Step struct {
-	Name  string
-	Sub   []*Step
-	Order int
+	Name string
+	Sub  []*Step
 
 	GetObj func() StepObject
 	Render func(c StepObject) StepObject

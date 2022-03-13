@@ -66,9 +66,8 @@ func NewPublisherSteps(cfg *InitConfig) *base.Step {
 	}
 
 	var step = &base.Step{
-		Order: 30,
-		Name:  "publisher",
-		Sub:   []*base.Step{publisher},
+		Name: "publisher",
+		Sub:  []*base.Step{publisher},
 	}
 	return step
 }

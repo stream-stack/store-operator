@@ -26,9 +26,8 @@ func NewLocalPersistentVolumeSteps(cfg *InitConfig) *base.Step {
 		steps[i] = buildStepByIndex(i)
 	}
 	return &base.Step{
-		Order: 10,
-		Name:  "localPersistentVolume",
-		Sub:   steps,
+		Name: "localPersistentVolume",
+		Sub:  steps,
 		SetDefault: func(t base.StepObject) {
 			c := t.(*v13.StoreSet)
 			//全局label处理,加入app:xxx(name)-storeset,version:arm-1.0.0标签

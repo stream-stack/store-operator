@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"fmt"
 	v14 "github.com/stream-stack/store-operator/apis/knative/v1"
+	v15 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	"gopkg.in/yaml.v3"
 	"io/fs"
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
+	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"text/template"
 )
 
@@ -55,10 +58,19 @@ func NewDispatcher(config *InitConfig) *base.Step {
 		},
 		Next: func(ctx *base.StepContext) (bool, error) {
 			broker := ctx.StepObject.(*v14.Broker)
-			//todo:将符合selector的storeset地址推送到dispatcher
-			if broker.Status.Dispatcher.Sts.ReadyReplicas == broker.Spec.Dispatcher.Replicas {
-				return true, nil
+			if broker.Status.Dispatcher.Sts.ReadyReplicas != broker.Spec.Dispatcher.Replicas {
+				return false, nil
 			}
+			list := &v15.StoreSetList{}
+			selectorMap, err := v13.LabelSelectorAsMap(broker.Spec.Selector)
+			if err != nil {
+				return false, err
+			}
+			err = ctx.GetClient().List(ctx.Context, list, client.MatchingLabels(selectorMap))
+			if err != nil {
+				return false, err
+			}
+			//todo:将符合selector的storeset地址推送到dispatcher
 
 			return false, nil
 		},

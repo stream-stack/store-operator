@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .ObjectMeta.Name -}}-publisher
+  namespace: {{ .ObjectMeta.Namespace -}}
+  labels:
+    module: publisher
+{{range $key,$value := .ObjectMeta.Labels}}
+    {{$key}}: {{$value -}}
+{{end}}
+spec:
+  replicas: {{ .Spec.Publisher.Replicas}}
+  selector:
+    matchLabels:
+      module: publisher
+{{range $key,$value := .ObjectMeta.Labels}}
+      {{$key}}: {{$value -}}
+{{end}}
+  template:
+    metadata:
+      labels:
+        module: publisher
+{{range $key,$value := .ObjectMeta.Labels}}
+        {{$key}}: {{$value -}}
+{{end}}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: publisher
+          image: {{ .Spec.Publisher.Image -}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - './publisher'
+          workingDir: '/'
+          args:
+            - '--Address='
+#TODO:健康检查,资源限制

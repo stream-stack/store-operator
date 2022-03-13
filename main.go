@@ -87,7 +87,7 @@ func main() {
 	if err = (&storeset.StoreSetReconciler{
 		Client:   mgr.GetClient(),
 		Scheme:   mgr.GetScheme(),
-		Recorder: mgr.GetEventRecorderFor("operator"),
+		Recorder: mgr.GetEventRecorderFor("storeset-operator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "StoreSet")
 		os.Exit(1)
@@ -97,15 +97,17 @@ func main() {
 		os.Exit(1)
 	}
 	if err = (&knativecontrollers.BrokerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("broker-operator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Broker")
 		os.Exit(1)
 	}
 	if err = (&knativecontrollers.SubscriptionReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
+		Client:   mgr.GetClient(),
+		Scheme:   mgr.GetScheme(),
+		Recorder: mgr.GetEventRecorderFor("subscription-operator"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Subscription")
 		os.Exit(1)

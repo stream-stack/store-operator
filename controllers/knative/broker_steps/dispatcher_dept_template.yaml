@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .ObjectMeta.Name -}}-dispatcher
+  namespace: {{ .ObjectMeta.Namespace -}}
+  labels:
+    module: dispatcher
+{{range $key,$value := .ObjectMeta.Labels}}
+    {{$key}}: {{$value -}}
+{{end}}
+spec:
+  replicas: {{ .Spec.Dispatcher.Replicas}}
+  selector:
+    matchLabels:
+      module: dispatcher
+{{range $key,$value := .ObjectMeta.Labels}}
+      {{$key}}: {{$value -}}
+{{end}}
+  template:
+    metadata:
+      labels:
+        module: dispatcher
+{{range $key,$value := .ObjectMeta.Labels}}
+        {{$key}}: {{$value -}}
+{{end}}
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: dispatcher
+          image: {{ .Spec.Dispatcher.Image -}}
+          imagePullPolicy: IfNotPresent
+          command:
+            - './dispatcher'
+          workingDir: '/'
+          args:
+            - '--Address='
+#TODO:健康检查,资源限制

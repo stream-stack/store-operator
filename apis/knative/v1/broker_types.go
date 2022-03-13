@@ -17,25 +17,60 @@ limitations under the License.
 package v1
 
 import (
+	v1 "k8s.io/api/apps/v1"
+	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type BrokerPartition struct {
+	//按照 数量，数据量，时间 三种策略进行分区
+	//Counter  BrokerPartitionCounter  `json:"counter,omitempty"`
+	//DataSize BrokerPartitionDataSize `json:"dataSize,omitempty"`
+	//Timer    BrokerPartitionTimer    `json:"timer,omitempty"`
+	Size uint64 `json:"size,omitempty"`
+}
+
+type DispatcherSpec struct {
+	Replicas int32  `json:"replicas,omitempty"`
+	Image    string `json:"image,omitempty"`
+}
+
+type PublisherSpec struct {
+	Replicas int32  `json:"replicas,omitempty"`
+	Image    string `json:"image,omitempty"`
+}
+
 // BrokerSpec defines the desired state of Broker
 type BrokerSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Selector   *metav1.LabelSelector `json:"selector,omitempty"`
+	Partition  BrokerPartition       `json:"partition,omitempty"`
+	Dispatcher DispatcherSpec        `json:"dispatcher,omitempty"`
+	Publisher  PublisherSpec         `json:"publisher,omitempty"`
+}
 
-	// Foo is an example field of Broker. Edit broker_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+type DispatcherStatus struct {
+	Dept v1.DeploymentStatus `json:"dept,omitempty"`
+	Svc  v12.ServiceStatus   `json:"svc,omitempty"`
+}
+
+type PublisherStatus struct {
+	Dept v1.DeploymentStatus `json:"dept,omitempty"`
+	Svc  v12.ServiceStatus   `json:"svc,omitempty"`
+}
+
+type ServiceStatus struct {
+	v12.ServiceStatus `json:",inline"`
+	Name              string `json:"name,omitempty"`
 }
 
 // BrokerStatus defines the observed state of Broker
 type BrokerStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Dispatcher DispatcherStatus `json:"dispatcher,omitempty"`
+	Publisher  PublisherStatus  `json:"publisher,omitempty"`
+	Service    ServiceStatus    `json:"service,omitempty"`
 }
 
 //+kubebuilder:object:root=true

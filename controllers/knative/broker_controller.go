@@ -18,24 +18,47 @@ package knative
 
 import (
 	"context"
-
+	knativev1 "github.com/stream-stack/store-operator/apis/knative/v1"
+	"github.com/stream-stack/store-operator/pkg/base"
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/tools/record"
+	"reflect"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
-
-	knativev1 "github.com/stream-stack/store-operator/apis/knative/v1"
 )
 
 // BrokerReconciler reconciles a Broker object
 type BrokerReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
+	Scheme   *runtime.Scheme
+	Recorder record.EventRecorder
+}
+
+func (r *BrokerReconciler) GetClient() client.Client {
+	return r.Client
+}
+
+func (r *BrokerReconciler) GetScheme() *runtime.Scheme {
+	return r.Scheme
+}
+
+func (r *BrokerReconciler) GetRecorder() record.EventRecorder {
+	return r.Recorder
 }
 
 //+kubebuilder:rbac:groups=knative.stream-stack.tanx,resources=brokers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=knative.stream-stack.tanx,resources=brokers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=knative.stream-stack.tanx,resources=brokers/finalizers,verbs=update
+//+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=apps,resources=deployments/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=apps,resources=deployments/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=services,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=services/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=core,resources=services/finalizers,verbs=update
+//+kubebuilder:rbac:groups="",resources=events,verbs=create;patch
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
@@ -47,16 +70,23 @@ type BrokerReconciler struct {
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.0/pkg/reconcile
 func (r *BrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	_ = log.FromContext(ctx)
+	l := log.FromContext(ctx)
+	rl := l.WithValues("Broker", req.NamespacedName)
 
-	// TODO(user): your logic here
-
-	return ctrl.Result{}, nil
+	return base.NewStepContext(ctx, rl, r, statusDeepEqual).Reconcile(req.NamespacedName, &knativev1.Broker{}, Steps)
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *BrokerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&knativev1.Broker{}).
+		For(&knativev1.Broker{}).Owns(&appsv1.Deployment{}).Owns(&corev1.Service{}).
 		Complete(r)
 }
+
+func statusDeepEqual(now base.StepObject, old runtime.Object) bool {
+	nowSet := now.(*knativev1.Broker)
+	oldSet := old.(*knativev1.Broker)
+	return reflect.DeepEqual(nowSet.Status, oldSet.Status)
+}
+
+var Steps = make([]*base.Step, 0)

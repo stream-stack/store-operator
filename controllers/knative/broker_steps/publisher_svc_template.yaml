@@ -5,9 +5,10 @@ metadata:
   namespace: {{ .ObjectMeta.Namespace -}}
 spec:
   ports:
-    - port: 80
+    - port: 8088
       protocol: TCP
-      targetPort: 80
+      targetPort: 8088
+      name: grpc-manager
   selector:
     module: publisher
 {{range $key,$value := .ObjectMeta.Labels}}

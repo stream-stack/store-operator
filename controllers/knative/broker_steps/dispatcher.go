@@ -13,7 +13,7 @@ import (
 	"text/template"
 )
 
-//go:embed dispatcher_dept_template.yaml dispatcher_svc_template.yaml
+//go:embed dispatcher_sts_template.yaml dispatcher_svc_template.yaml
 var templateFs fs.FS
 
 var yamlTemplate *template.Template
@@ -23,29 +23,29 @@ func init() {
 }
 
 func NewDispatcher(config *InitConfig) *base.Step {
-	dept := &base.Step{
-		Name: fmt.Sprintf(`dispatcher-dept`),
+	sts := &base.Step{
+		Name: fmt.Sprintf(`dispatcher-sts`),
 		GetObj: func() base.StepObject {
-			return &v1.Deployment{}
+			return &v1.StatefulSet{}
 		},
 		Render: func(t base.StepObject) base.StepObject {
 			c := t.(*v14.Broker)
 			buffer := &bytes.Buffer{}
-			_ = yamlTemplate.ExecuteTemplate(buffer, "dispatcher_dept_template.yaml", c)
+			_ = yamlTemplate.ExecuteTemplate(buffer, "dispatcher_sts_template.yaml", c)
 			fmt.Println("渲染后结果：")
 			fmt.Println(string(buffer.Bytes()))
 
-			d := &v1.Deployment{}
+			d := &v1.StatefulSet{}
 			_ = yaml.Unmarshal(buffer.Bytes(), d)
 
 			return d
 		},
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
 			c := owner.(*v14.Broker)
-			o := now.(*v1.Deployment)
-			c.Status.Dispatcher.Dept = o.Status
+			o := now.(*v1.StatefulSet)
+			c.Status.Dispatcher.Sts = o.Status
 
-			t := target.(*v1.Deployment)
+			t := target.(*v1.StatefulSet)
 			if !reflect.DeepEqual(t.Spec, o.Spec) {
 				o.Spec = t.Spec
 				return true, o, nil
@@ -55,7 +55,8 @@ func NewDispatcher(config *InitConfig) *base.Step {
 		},
 		Next: func(ctx *base.StepContext) (bool, error) {
 			broker := ctx.StepObject.(*v14.Broker)
-			if broker.Status.Dispatcher.Dept.ReadyReplicas == broker.Spec.Dispatcher.Replicas {
+			//todo:将符合selector的storeset地址推送到dispatcher
+			if broker.Status.Dispatcher.Sts.ReadyReplicas == broker.Spec.Dispatcher.Replicas {
 				return true, nil
 			}
 
@@ -110,12 +111,11 @@ func NewDispatcher(config *InitConfig) *base.Step {
 			return false, now, nil
 		},
 		Next: func(ctx *base.StepContext) (bool, error) {
-			//todo:将符合selector的storeset地址推送到dispatcher
 			return true, nil
 		},
 	}
 	return &base.Step{
 		Name: "dispatcher",
-		Sub:  []*base.Step{dept, svc},
+		Sub:  []*base.Step{svc, sts},
 	}
 }

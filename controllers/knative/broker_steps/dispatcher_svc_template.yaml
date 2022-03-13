@@ -8,6 +8,11 @@ spec:
     - port: 80
       protocol: TCP
       targetPort: 80
+      name: http-cloudevent
+    - port: 8088
+      protocol: TCP
+      targetPort: 8088
+      name: grpc-manager
   selector:
     module: dispatcher
 {{range $key,$value := .ObjectMeta.Labels}}

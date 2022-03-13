@@ -13,7 +13,7 @@ import (
 	"text/template"
 )
 
-//go:embed publisher_dept_template.yaml publisher_svc_template.yaml
+//go:embed publisher_sts_template.yaml publisher_svc_template.yaml
 var publisherTemplateFs fs.FS
 
 var publisherYamlTemplate *template.Template
@@ -23,29 +23,29 @@ func init() {
 }
 
 func NewPublisher(config *InitConfig) *base.Step {
-	dept := &base.Step{
-		Name: fmt.Sprintf(`publisher-dept`),
+	sts := &base.Step{
+		Name: fmt.Sprintf(`publisher-sts`),
 		GetObj: func() base.StepObject {
-			return &v1.Deployment{}
+			return &v1.StatefulSet{}
 		},
 		Render: func(t base.StepObject) base.StepObject {
 			c := t.(*v14.Broker)
 			buffer := &bytes.Buffer{}
-			_ = publisherYamlTemplate.ExecuteTemplate(buffer, "publisher_dept_template.yaml", c)
+			_ = publisherYamlTemplate.ExecuteTemplate(buffer, "publisher_sts_template.yaml", c)
 			fmt.Println("渲染后结果：")
 			fmt.Println(string(buffer.Bytes()))
 
-			d := &v1.Deployment{}
+			d := &v1.StatefulSet{}
 			_ = yaml.Unmarshal(buffer.Bytes(), d)
 
 			return d
 		},
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
 			c := owner.(*v14.Broker)
-			o := now.(*v1.Deployment)
-			c.Status.Publisher.Dept = o.Status
+			o := now.(*v1.StatefulSet)
+			c.Status.Publisher.Sts = o.Status
 
-			t := target.(*v1.Deployment)
+			t := target.(*v1.StatefulSet)
 			if !reflect.DeepEqual(t.Spec, o.Spec) {
 				o.Spec = t.Spec
 				return true, o, nil
@@ -55,7 +55,8 @@ func NewPublisher(config *InitConfig) *base.Step {
 		},
 		Next: func(ctx *base.StepContext) (bool, error) {
 			broker := ctx.StepObject.(*v14.Broker)
-			if broker.Status.Publisher.Dept.ReadyReplicas == broker.Spec.Publisher.Replicas {
+			//todo:将符合selector的subscription地址推送到publisher
+			if broker.Status.Publisher.Sts.ReadyReplicas == broker.Spec.Publisher.Replicas {
 				return true, nil
 			}
 
@@ -110,12 +111,11 @@ func NewPublisher(config *InitConfig) *base.Step {
 			return false, now, nil
 		},
 		Next: func(ctx *base.StepContext) (bool, error) {
-			//todo:将符合selector的storeset地址推送到publisher
 			return true, nil
 		},
 	}
 	return &base.Step{
 		Name: "publisher",
-		Sub:  []*base.Step{dept, svc},
+		Sub:  []*base.Step{svc, sts},
 	}
 }

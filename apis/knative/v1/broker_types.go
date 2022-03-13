@@ -52,13 +52,13 @@ type BrokerSpec struct {
 }
 
 type DispatcherStatus struct {
-	Dept v1.DeploymentStatus `json:"dept,omitempty"`
-	Svc  v12.ServiceStatus   `json:"svc,omitempty"`
+	Sts v1.StatefulSetStatus `json:"sts,omitempty"`
+	Svc v12.ServiceStatus    `json:"svc,omitempty"`
 }
 
 type PublisherStatus struct {
-	Dept v1.DeploymentStatus `json:"dept,omitempty"`
-	Svc  v12.ServiceStatus   `json:"svc,omitempty"`
+	Sts v1.StatefulSetStatus `json:"sts,omitempty"`
+	Svc v12.ServiceStatus    `json:"svc,omitempty"`
 }
 
 type ServiceStatus struct {

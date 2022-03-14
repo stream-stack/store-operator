@@ -150,3 +150,55 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - knative.stream-stack.tanx
+  resources:
+  - brokers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - knative.stream-stack.tanx
+  resources:
+  - brokers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - knative.stream-stack.tanx
+  resources:
+  - brokers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - knative.stream-stack.tanx
+  resources:
+  - subscriptions
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - knative.stream-stack.tanx
+  resources:
+  - subscriptions/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - knative.stream-stack.tanx
+  resources:
+  - subscriptions/status
+  verbs:
+  - get
+  - patch
+  - update

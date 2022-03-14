@@ -1,6 +1,16 @@
 apiVersion: knative.stream-stack.tanx/v1
 kind: Broker
 metadata:
-  name: broker-sample
+  name: test
+  namespace: default
 spec:
-  # TODO(user): Add fields here
+#  selector:
+#    matchLabels:
+  partition:
+    size: 1000
+  dispatcher:
+    replicas: 1
+    image: ccr.ccs.tencentyun.com/stream/dispatcher:latest
+  publisher:
+    replicas: 1
+    image: ccr.ccs.tencentyun.com/stream/publisher:latest

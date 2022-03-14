@@ -23,6 +23,7 @@ import (
 	v1 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/controllers/storeset"
 
+	_ "github.com/stream-stack/store-operator/controllers/knative/broker_steps"
 	_ "github.com/stream-stack/store-operator/controllers/storeset/store_set_steps"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)

@@ -131,7 +131,7 @@ type Step struct {
 	Sub  []*Step
 
 	GetObj func() StepObject
-	Render func(c StepObject) StepObject
+	Render func(c StepObject) (StepObject, error)
 	//设置cluster的status,对比子资源目标和现在的声明情况
 	SetStatus func(c StepObject, target, now StepObject) (needUpdate bool, updateObject StepObject, err error)
 	Del       func(ctx context.Context, c StepObject, client client.Client) error
@@ -218,9 +218,12 @@ func (m *Step) hasSub() bool {
 }
 
 func (m *Step) exist(ctx *StepContext) (bool, error) {
-	render := m.Render(ctx.StepObject)
-	err := ctx.StepReconcile.GetClient().Get(ctx, types.NamespacedName{
-		Namespace: ctx.StepObject.GetNamespace(),
+	render, err := m.Render(ctx.StepObject)
+	if err != nil {
+		return false, err
+	}
+	err = ctx.StepReconcile.GetClient().Get(ctx, types.NamespacedName{
+		Namespace: render.GetNamespace(),
 		Name:      render.GetName(),
 	}, m.GetObj())
 	if err != nil && errors.IsNotFound(err) {
@@ -234,7 +237,10 @@ func (m *Step) exist(ctx *StepContext) (bool, error) {
 
 func (m *Step) update(ctx *StepContext) error {
 	obj := m.GetObj()
-	render := m.Render(ctx.StepObject)
+	render, err := m.Render(ctx.StepObject)
+	if err != nil {
+		return err
+	}
 	if err := ctx.StepReconcile.GetClient().Get(ctx, client.ObjectKey{
 		Namespace: ctx.StepObject.GetNamespace(),
 		Name:      render.GetName(),
@@ -255,10 +261,13 @@ func (m *Step) update(ctx *StepContext) error {
 }
 
 func (m *Step) create(ctx *StepContext) error {
-	render := m.Render(ctx.StepObject)
+	render, err := m.Render(ctx.StepObject)
+	if err != nil {
+		return err
+	}
 	_ = controllerutil.SetControllerReference(ctx.StepObject, render, ctx.StepReconcile.GetScheme())
 	ctx.StepReconcile.GetRecorder().Event(ctx.StepObject, v12.EventTypeNormal, fmt.Sprintf("Creating-%s", m.Name), render.GetName())
-	err := ctx.StepReconcile.GetClient().Create(ctx, render)
+	err = ctx.StepReconcile.GetClient().Create(ctx, render)
 	if err != nil && errors.IsAlreadyExists(err) {
 		return nil
 	}

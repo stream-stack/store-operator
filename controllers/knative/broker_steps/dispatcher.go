@@ -8,10 +8,10 @@ import (
 	v14 "github.com/stream-stack/store-operator/apis/knative/v1"
 	v15 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
-	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
 	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"text/template"
@@ -23,7 +23,11 @@ var templateFs embed.FS
 var yamlTemplate *template.Template
 
 func init() {
-	yamlTemplate, _ = template.ParseFS(templateFs)
+	var err error
+	yamlTemplate, err = template.ParseFS(templateFs, "*")
+	if err != nil {
+		panic(err)
+	}
 }
 
 func NewDispatcher(config *InitConfig) *base.Step {
@@ -32,17 +36,23 @@ func NewDispatcher(config *InitConfig) *base.Step {
 		GetObj: func() base.StepObject {
 			return &v1.StatefulSet{}
 		},
-		Render: func(t base.StepObject) base.StepObject {
+		Render: func(t base.StepObject) (base.StepObject, error) {
 			c := t.(*v14.Broker)
 			buffer := &bytes.Buffer{}
-			_ = yamlTemplate.ExecuteTemplate(buffer, "dispatcher_sts_template.yaml", c)
+			err := yamlTemplate.ExecuteTemplate(buffer, "dispatcher_sts_template.yaml", c)
+			if err != nil {
+				return nil, err
+			}
 			fmt.Println("渲染后结果：")
 			fmt.Println(string(buffer.Bytes()))
 
 			d := &v1.StatefulSet{}
-			_ = yaml.Unmarshal(buffer.Bytes(), d)
+			err = yaml.Unmarshal(buffer.Bytes(), d)
+			if err != nil {
+				return nil, err
+			}
 
-			return d
+			return d, nil
 		},
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
 			c := owner.(*v14.Broker)
@@ -71,17 +81,18 @@ func NewDispatcher(config *InitConfig) *base.Step {
 			if err != nil {
 				return false, err
 			}
+
 			//todo:将符合selector的storeset地址推送到dispatcher
 
-			return false, nil
+			return true, nil
 		},
 		SetDefault: func(t base.StepObject) {
 			c := t.(*v14.Broker)
 			if len(c.Spec.Dispatcher.Image) == 0 {
-				c.Spec.Dispatcher.Image = config.BrokerImage
+				c.Spec.Dispatcher.Image = config.DispatcherImage
 			}
 			if c.Spec.Dispatcher.Replicas <= 0 {
-				c.Spec.Dispatcher.Replicas = config.BrokerReplicas
+				c.Spec.Dispatcher.Replicas = config.DispatcherReplicas
 			}
 			//TODO:partition default value set
 		},
@@ -91,17 +102,22 @@ func NewDispatcher(config *InitConfig) *base.Step {
 		GetObj: func() base.StepObject {
 			return &v12.Service{}
 		},
-		Render: func(t base.StepObject) base.StepObject {
+		Render: func(t base.StepObject) (base.StepObject, error) {
 			c := t.(*v14.Broker)
 			buffer := &bytes.Buffer{}
-			_ = yamlTemplate.ExecuteTemplate(buffer, "dispatcher_svc_template.yaml", c)
+			if err := yamlTemplate.ExecuteTemplate(buffer, "dispatcher_svc_template.yaml", c); err != nil {
+				return nil, err
+			}
+
 			fmt.Println("渲染后结果：")
 			fmt.Println(string(buffer.Bytes()))
 
 			d := &v12.Service{}
-			_ = yaml.Unmarshal(buffer.Bytes(), d)
+			if err := yaml.Unmarshal(buffer.Bytes(), d); err != nil {
+				return nil, err
+			}
 
-			return d
+			return d, nil
 		},
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
 			c := owner.(*v14.Broker)

@@ -7,10 +7,10 @@ import (
 
 func init() {
 	config := &InitConfig{
-		BrokerImage:       "ccr.ccs.tencentyun.com/stream/broker:latest",
-		BrokerReplicas:    2,
-		PublisherImage:    "ccr.ccs.tencentyun.com/stream/publisher:latest",
-		PublisherReplicas: 2,
+		DispatcherImage:    "ccr.ccs.tencentyun.com/stream/dispatcher:latest",
+		DispatcherReplicas: 2,
+		PublisherImage:     "ccr.ccs.tencentyun.com/stream/publisher:latest",
+		PublisherReplicas:  2,
 	}
 	dept := NewDispatcher(config)
 	knative.Steps = append(knative.Steps, dept)
@@ -18,14 +18,14 @@ func init() {
 	v1.BrokerDefaulters = append(v1.BrokerDefaulters, dept)
 
 	publisher := NewPublisher(config)
-	knative.Steps = append(knative.Steps, dept)
+	knative.Steps = append(knative.Steps, publisher)
 	v1.BrokerValidators = append(v1.BrokerValidators, publisher)
 	v1.BrokerDefaulters = append(v1.BrokerDefaulters, publisher)
 }
 
 type InitConfig struct {
-	BrokerImage       string
-	BrokerReplicas    int32
-	PublisherImage    string
-	PublisherReplicas int32
+	DispatcherImage    string
+	DispatcherReplicas int32
+	PublisherImage     string
+	PublisherReplicas  int32
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 	v12 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
-	"gopkg.in/yaml.v3"
 	v1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/util/yaml"
 	"reflect"
 )
 
@@ -19,10 +19,13 @@ func NewPublisherSteps(cfg *InitConfig) *base.Step {
 		GetObj: func() base.StepObject {
 			return &v1.Deployment{}
 		},
-		Render: func(t base.StepObject) base.StepObject {
+		Render: func(t base.StepObject) (base.StepObject, error) {
 			c := t.(*v12.StoreSet)
 			d := &v1.Deployment{}
-			_ = yaml.Unmarshal(deptTemplate, d)
+			err := yaml.Unmarshal(deptTemplate, d)
+			if err != nil {
+				return nil, err
+			}
 			d.Name = c.Name
 			d.Namespace = c.Namespace
 			d.Labels = c.Labels
@@ -34,7 +37,7 @@ func NewPublisherSteps(cfg *InitConfig) *base.Step {
 			container.Args = []string{fmt.Sprintf(container.Args[0], c.Status.StoreStatus.ServiceName, c.Namespace, containerPort.IntVal)}
 			d.Spec.Template.Spec.Containers[0] = container
 
-			return d
+			return d, nil
 		},
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
 			c := owner.(*v12.StoreSet)

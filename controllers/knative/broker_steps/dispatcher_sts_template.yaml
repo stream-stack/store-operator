@@ -2,9 +2,10 @@ apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   name: {{ .ObjectMeta.Name -}}-dispatcher
-  namespace: {{ .ObjectMeta.Namespace -}}
+  namespace: {{ .ObjectMeta.Namespace }}
   labels:
     module: dispatcher
+    broker: {{ .ObjectMeta.Name }}
 {{range $key,$value := .ObjectMeta.Labels}}
     {{$key}}: {{$value -}}
 {{end}}
@@ -14,6 +15,7 @@ spec:
   selector:
     matchLabels:
       module: dispatcher
+      broker: {{ .ObjectMeta.Name }}
 {{range $key,$value := .ObjectMeta.Labels}}
       {{$key}}: {{$value -}}
 {{end}}
@@ -21,20 +23,21 @@ spec:
     metadata:
       labels:
         module: dispatcher
+        broker: {{ .ObjectMeta.Name }}
 {{range $key,$value := .ObjectMeta.Labels}}
         {{$key}}: {{$value -}}
 {{end}}
     spec:
       containers:
         - name: dispatcher
-          image: {{ .Spec.Dispatcher.Image -}}
+          image: {{ .Spec.Dispatcher.Image }}
           ports:
             - containerPort: 80
               name: http-cloudevent
             - containerPort: 8088
               name: grpc-manager
-          command:
-            - './dispatcher'
-          workingDir: '/'
-          args:
-            - '--Address='
+#          command:
+#            - './dispatcher'
+#          workingDir: '/'
+#          args:
+#            - '--Address='

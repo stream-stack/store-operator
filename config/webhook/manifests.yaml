@@ -11,6 +11,46 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /mutate-knative-stream-stack-tanx-v1-broker
+  failurePolicy: Fail
+  name: mbroker.kb.io
+  rules:
+  - apiGroups:
+    - knative.stream-stack.tanx
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - brokers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /mutate-knative-stream-stack-tanx-v1-subscription
+  failurePolicy: Fail
+  name: msubscription.kb.io
+  rules:
+  - apiGroups:
+    - knative.stream-stack.tanx
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - subscriptions
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /mutate-core-stream-stack-tanx-v1-storeset
   failurePolicy: Fail
   name: mstoreset.kb.io
@@ -32,6 +72,46 @@ metadata:
   creationTimestamp: null
   name: validating-webhook-configuration
 webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-knative-stream-stack-tanx-v1-broker
+  failurePolicy: Fail
+  name: vbroker.kb.io
+  rules:
+  - apiGroups:
+    - knative.stream-stack.tanx
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - brokers
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-knative-stream-stack-tanx-v1-subscription
+  failurePolicy: Fail
+  name: vsubscription.kb.io
+  rules:
+  - apiGroups:
+    - knative.stream-stack.tanx
+    apiVersions:
+    - v1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - subscriptions
+  sideEffects: None
 - admissionReviewVersions:
   - v1
   clientConfig:

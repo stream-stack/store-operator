@@ -2,7 +2,7 @@
 
 ## 启动k8s集群
 ```shell
-kind create cluster --config deploy/kind-cluster.yaml --name c1
+kind create cluster --config config/samples/kind-cluster.yaml --name c1
 
 kubebuilder init --domain my.domain --repo my.domain/guestbook
 kubebuilder init --domain stream-stack.tanx --repo github.com/stream-stack/store-operator

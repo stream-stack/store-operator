@@ -45,7 +45,7 @@ func buildStepByIndex(index int32) *base.Step {
 		GetObj: func() base.StepObject {
 			return &v12.PersistentVolume{}
 		},
-		Render: func(t base.StepObject) base.StepObject {
+		Render: func(t base.StepObject) (base.StepObject, error) {
 			c := t.(*v13.StoreSet)
 			filesystem := v12.PersistentVolumeFilesystem
 			return &v12.PersistentVolume{
@@ -67,7 +67,7 @@ func buildStepByIndex(index int32) *base.Step {
 					VolumeMode:                    &filesystem,
 					NodeAffinity:                  c.Spec.Volume.NodeAffinity,
 				},
-			}
+			}, nil
 		},
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
 			c := owner.(*v13.StoreSet)

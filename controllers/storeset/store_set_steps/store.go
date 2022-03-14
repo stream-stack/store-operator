@@ -25,7 +25,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 		GetObj: func() base.StepObject {
 			return &v12.Service{}
 		},
-		Render: func(set base.StepObject) base.StepObject {
+		Render: func(set base.StepObject) (base.StepObject, error) {
 			c := set.(*v14.StoreSet)
 			return &v12.Service{
 				ObjectMeta: metav1.ObjectMeta{
@@ -46,7 +46,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 					Selector: c.Labels,
 					Type:     v12.ServiceTypeClusterIP,
 				},
-			}
+			}, nil
 		},
 		SetStatus: func(set base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
 			c := set.(*v14.StoreSet)
@@ -86,7 +86,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 		GetObj: func() base.StepObject {
 			return &v13.StatefulSet{}
 		},
-		Render: func(set base.StepObject) base.StepObject {
+		Render: func(set base.StepObject) (base.StepObject, error) {
 			c := set.(*v14.StoreSet)
 			filesystem := v12.PersistentVolumeFilesystem
 			pvcName := c.Name
@@ -241,7 +241,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 						WhenScaled:  v13.DeletePersistentVolumeClaimRetentionPolicyType,
 					},
 				},
-			}
+			}, nil
 		},
 		SetStatus: func(set base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
 			c := set.(*v14.StoreSet)

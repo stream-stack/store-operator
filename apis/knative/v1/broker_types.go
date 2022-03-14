@@ -70,7 +70,6 @@ type ServiceStatus struct {
 type BrokerStatus struct {
 	Dispatcher DispatcherStatus `json:"dispatcher,omitempty"`
 	Publisher  PublisherStatus  `json:"publisher,omitempty"`
-	Service    ServiceStatus    `json:"service,omitempty"`
 }
 
 //+kubebuilder:object:root=true

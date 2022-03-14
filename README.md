@@ -3,6 +3,18 @@
 ## 启动k8s集群
 ```shell
 kind create cluster --config deploy/kind-cluster.yaml --name c1
+
+kubebuilder init --domain my.domain --repo my.domain/guestbook
+kubebuilder init --domain stream-stack.tanx --repo github.com/stream-stack/store-operator
+
+kubebuilder create api --group core --version v1 --kind StoreSet
+kubebuilder create api --group knative --version v1 --kind Broker
+kubebuilder create api --group knative --version v1 --kind Subscription
+
+kubebuilder create webhook --group core --version v1 --kind StoreSet --defaulting --programmatic-validation
+kubebuilder create webhook --group knative --version v1 --kind Broker --defaulting --programmatic-validation
+kubebuilder create webhook --group knative --version v1 --kind Subscription --defaulting --programmatic-validation
+
 ```
 
 

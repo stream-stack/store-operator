@@ -2,11 +2,11 @@ package store_set_steps
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
 	v14 "github.com/stream-stack/store-operator/apis/knative/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	"gopkg.in/yaml.v3"
-	"io/fs"
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
 	"reflect"
@@ -14,7 +14,7 @@ import (
 )
 
 //go:embed publisher_sts_template.yaml publisher_svc_template.yaml
-var publisherTemplateFs fs.FS
+var publisherTemplateFs embed.FS
 
 var publisherYamlTemplate *template.Template
 

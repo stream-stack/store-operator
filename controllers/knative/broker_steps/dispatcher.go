@@ -2,12 +2,13 @@ package store_set_steps
 
 import (
 	"bytes"
+	"embed"
+	_ "embed"
 	"fmt"
 	v14 "github.com/stream-stack/store-operator/apis/knative/v1"
 	v15 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	"gopkg.in/yaml.v3"
-	"io/fs"
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
 	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,7 +18,7 @@ import (
 )
 
 //go:embed dispatcher_sts_template.yaml dispatcher_svc_template.yaml
-var templateFs fs.FS
+var templateFs embed.FS
 
 var yamlTemplate *template.Template
 

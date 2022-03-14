@@ -38,9 +38,7 @@ func (r *StoreSet) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-//+kubebuilder:webhook:path=/mutate-core-stream-stack-tanx-v1-storeset,mutating=true,failurePolicy=fail,sideEffects=None,groups=core.stream-stack.tanx,resources=storesets,verbs=create;update,versions=v1,name=mstoreset.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-core-stream-stack-tanx-v1-storeset,mutating=true,failurePolicy=fail,sideEffects=None,groups=core.stream-stack.tanx,resources=storesets,verbs=create;update;delete,versions=v1,name=mstoreset.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &StoreSet{}
 
@@ -48,14 +46,12 @@ var _ webhook.Defaulter = &StoreSet{}
 func (r *StoreSet) Default() {
 	storesetlog.Info("default", "name", r.Name)
 
-	// TODO(user): fill in your defaulting logic.
 	for _, defaulter := range StoreSetDefaulters {
 		defaulter.Default(r)
 	}
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-core-stream-stack-tanx-v1-storeset,mutating=false,failurePolicy=fail,sideEffects=None,groups=core.stream-stack.tanx,resources=storesets,verbs=create;update,versions=v1,name=vstoreset.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-core-stream-stack-tanx-v1-storeset,mutating=false,failurePolicy=fail,sideEffects=None,groups=core.stream-stack.tanx,resources=storesets,verbs=create;update;delete,versions=v1,name=vstoreset.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &StoreSet{}
 
@@ -96,6 +92,5 @@ func (r *StoreSet) ValidateUpdate(old runtime.Object) error {
 func (r *StoreSet) ValidateDelete() error {
 	storesetlog.Info("validate delete", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }

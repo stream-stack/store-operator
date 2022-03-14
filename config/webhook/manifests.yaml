@@ -22,6 +22,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - brokers
   sideEffects: None
@@ -42,6 +43,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - subscriptions
   sideEffects: None
@@ -62,6 +64,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - storesets
   sideEffects: None
@@ -89,6 +92,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - brokers
   sideEffects: None
@@ -109,6 +113,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - subscriptions
   sideEffects: None
@@ -129,6 +134,7 @@ webhooks:
     operations:
     - CREATE
     - UPDATE
+    - DELETE
     resources:
     - storesets
   sideEffects: None

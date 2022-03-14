@@ -43,8 +43,6 @@ func NewDispatcher(config *InitConfig) *base.Step {
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println("渲染后结果：")
-			fmt.Println(string(buffer.Bytes()))
 
 			d := &v1.StatefulSet{}
 			err = yaml.Unmarshal(buffer.Bytes(), d)
@@ -108,9 +106,6 @@ func NewDispatcher(config *InitConfig) *base.Step {
 			if err := yamlTemplate.ExecuteTemplate(buffer, "dispatcher_svc_template.yaml", c); err != nil {
 				return nil, err
 			}
-
-			fmt.Println("渲染后结果：")
-			fmt.Println(string(buffer.Bytes()))
 
 			d := &v12.Service{}
 			if err := yaml.Unmarshal(buffer.Bytes(), d); err != nil {

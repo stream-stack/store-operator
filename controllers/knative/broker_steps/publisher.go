@@ -39,8 +39,6 @@ func NewPublisher(config *InitConfig) *base.Step {
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println("渲染后结果：")
-			fmt.Println(string(buffer.Bytes()))
 
 			d := &v1.StatefulSet{}
 			err = yaml.Unmarshal(buffer.Bytes(), d)
@@ -95,8 +93,6 @@ func NewPublisher(config *InitConfig) *base.Step {
 			if err != nil {
 				return nil, err
 			}
-			fmt.Println("渲染后结果：")
-			fmt.Println(string(buffer.Bytes()))
 
 			d := &v12.Service{}
 			err = yaml.Unmarshal(buffer.Bytes(), d)

@@ -38,9 +38,7 @@ func (r *Broker) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-
-//+kubebuilder:webhook:path=/mutate-knative-stream-stack-tanx-v1-broker,mutating=true,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=brokers,verbs=create;update,versions=v1,name=mbroker.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-knative-stream-stack-tanx-v1-broker,mutating=true,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=brokers,verbs=create;update;delete,versions=v1,name=mbroker.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Broker{}
 
@@ -53,8 +51,7 @@ func (r *Broker) Default() {
 	}
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
-//+kubebuilder:webhook:path=/validate-knative-stream-stack-tanx-v1-broker,mutating=false,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=brokers,verbs=create;update,versions=v1,name=vbroker.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-knative-stream-stack-tanx-v1-broker,mutating=false,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=brokers,verbs=create;update;delete,versions=v1,name=vbroker.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Broker{}
 
@@ -94,6 +91,5 @@ func (r *Broker) ValidateUpdate(old runtime.Object) error {
 func (r *Broker) ValidateDelete() error {
 	brokerlog.Info("validate delete", "name", r.Name)
 
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }

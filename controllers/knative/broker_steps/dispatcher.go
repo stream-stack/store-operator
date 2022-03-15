@@ -6,14 +6,12 @@ import (
 	_ "embed"
 	"fmt"
 	v14 "github.com/stream-stack/store-operator/apis/knative/v1"
-	v15 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
+	"github.com/stream-stack/store-operator/pkg/discovery"
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
-	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"reflect"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"text/template"
 )
 
@@ -70,17 +68,9 @@ func NewDispatcher(config *InitConfig) *base.Step {
 			if broker.Status.Dispatcher.Sts.ReadyReplicas != broker.Spec.Dispatcher.Replicas {
 				return false, nil
 			}
-			list := &v15.StoreSetList{}
-			selectorMap, err := v13.LabelSelectorAsMap(broker.Spec.Selector)
-			if err != nil {
+			if err := discovery.StartDispatcherStoreSetDiscovery(ctx, broker); err != nil {
 				return false, err
 			}
-			err = ctx.GetClient().List(ctx.Context, list, client.MatchingLabels(selectorMap))
-			if err != nil {
-				return false, err
-			}
-
-			//todo:将符合selector的storeset地址推送到dispatcher
 
 			return true, nil
 		},
@@ -117,7 +107,7 @@ func NewDispatcher(config *InitConfig) *base.Step {
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
 			c := owner.(*v14.Broker)
 			o := now.(*v12.Service)
-			c.Status.Dispatcher.Svc = o.Status
+			c.Status.Dispatcher.SvcName = o.Name
 
 			t := target.(*v12.Service)
 			if !reflect.DeepEqual(t.Spec.Selector, o.Spec.Selector) {

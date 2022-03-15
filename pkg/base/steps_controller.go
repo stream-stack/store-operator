@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-const FinalizerName = "finalizer.storeset.stream-stack.tanx"
+const FinalizerName = "finalizer.stream-stack.tanx"
 
 var retryDuration = time.Second * 1
 
@@ -78,18 +78,18 @@ func (c *StepContext) deleteReconcile(steps []*Step) (ctrl.Result, error) {
 		c.Logger.Info("remove Finalizers error", "error", err)
 		return ctrl.Result{}, err
 	}
-	c.Logger.Info("delete crd finish", "name", c.StepObject.GetName(), "namespace", c.StepObject.GetNamespace())
+	c.Logger.Info("delete crd finish")
 
 	return ctrl.Result{}, nil
 }
 
 func (c *StepContext) reconcile(steps []*Step, oldObject runtime.Object) (ctrl.Result, error) {
 	total := len(steps)
-	c.Logger.Info("Begin crd Reconcile", "name", c.StepObject.GetName(), "namespace", c.StepObject.GetNamespace(), "totalStep:", total)
+	c.Logger.Info("Begin crd Reconcile", "totalStep:", total)
 	for index, module := range steps {
 		moduleName := module.Name
 		moduleString := fmt.Sprintf("[%v/%v]%s ", index+1, total, moduleName)
-		c.Logger.Info(moduleString, "name", c.StepObject.GetName(), "namespace", c.StepObject.GetNamespace())
+		c.Logger.Info(moduleString)
 		if err := module.Reconcile(c); err != nil {
 			c.Logger.Info(moduleString+"module not exist,create error", "error", err)
 			c.GetRecorder().Event(c.StepObject, v12.EventTypeWarning, "ReconcileError", fmt.Sprintf("[%s] Error:%v", moduleName, err))
@@ -122,7 +122,7 @@ func (c *StepContext) reconcile(steps []*Step, oldObject runtime.Object) (ctrl.R
 			}, err
 		}
 	}
-	c.Logger.Info("End StoreSet Reconcile")
+	c.Logger.Info("End crd Reconcile")
 	return ctrl.Result{}, nil
 }
 

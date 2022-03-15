@@ -105,7 +105,7 @@ func NewPublisher(config *InitConfig) *base.Step {
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
 			c := owner.(*v14.Broker)
 			o := now.(*v12.Service)
-			c.Status.Publisher.Svc = o.Status
+			c.Status.Publisher.SvcName = o.Name
 
 			t := target.(*v12.Service)
 			if !reflect.DeepEqual(t.Spec.Selector, o.Spec.Selector) {

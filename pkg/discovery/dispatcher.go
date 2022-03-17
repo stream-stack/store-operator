@@ -2,16 +2,15 @@ package discovery
 
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	_ "github.com/Jille/grpc-multi-resolver"
-	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	v1 "github.com/stream-stack/store-operator/apis/knative/v1"
 	v15 "github.com/stream-stack/store-operator/apis/storeset/v1"
-	"github.com/stream-stack/store-operator/pkg/base"
 	protocol "github.com/stream-stack/store-operator/pkg/proto"
-	"google.golang.org/grpc"
+	"github.com/stream-stack/store-operator/pkg/store_client"
 	_ "google.golang.org/grpc/health"
 	"io/ioutil"
 	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,14 +21,14 @@ import (
 	"time"
 )
 
-func StartDispatcherStoreSetDiscovery(ctx *base.StepContext, broker *v1.Broker) error {
+func StartDispatcherStoreSetDiscovery(ctx context.Context, k8sClient client.Client, broker *v1.Broker) error {
 	var err error
 	list := &v15.StoreSetList{}
 	selectorMap, err := v13.LabelSelectorAsMap(broker.Spec.Selector)
 	if err != nil {
 		return err
 	}
-	err = ctx.GetClient().List(ctx, list, client.MatchingLabels(selectorMap))
+	err = k8sClient.List(ctx, list, client.MatchingLabels(selectorMap))
 	if err != nil {
 		return err
 	}
@@ -55,7 +54,7 @@ func StartDispatcherStoreSetDiscovery(ctx *base.StepContext, broker *v1.Broker) 
 		result = r
 	}
 
-	configuration := &Configuration{}
+	configuration := &protocol.Configuration{}
 	err = json.Unmarshal(result, configuration)
 	if err != nil {
 		return err
@@ -67,36 +66,21 @@ func StartDispatcherStoreSetDiscovery(ctx *base.StepContext, broker *v1.Broker) 
 	return allocatePartition(ctx, list.Items, storesetData, broker)
 }
 
-func allocatePartition(ctx *base.StepContext, items []v15.StoreSet, data []store, broker *v1.Broker) error {
+func allocatePartition(ctx context.Context, items []v15.StoreSet, data []protocol.Store, broker *v1.Broker) error {
 	//TODO:根据分片规则分片
 	intn := rand.Intn(len(items))
 	//set := items[intn]
 	s := data[intn]
 	buffer := &bytes.Buffer{}
-	err := binary.Write(buffer, binary.BigEndian, Partition{
+	err := binary.Write(buffer, binary.BigEndian, protocol.Partition{
 		Begin: "0",
 		Store: s,
 	})
 	if err != nil {
 		return err
 	}
-
-	serviceConfig := `{"healthCheckConfig": {"serviceName": "store"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`
-	retryOpts := []grpc_retry.CallOption{
-		grpc_retry.WithBackoff(grpc_retry.BackoffExponential(100 * time.Millisecond)),
-		grpc_retry.WithMax(5),
-	}
-	conn, err := grpc.Dial("dns:///"+strings.Join(s.Uris, ","),
-		grpc.WithDefaultServiceConfig(serviceConfig), grpc.WithInsecure(),
-		grpc.WithDefaultCallOptions(grpc.WaitForReady(true)),
-		grpc.WithUnaryInterceptor(grpc_retry.UnaryClientInterceptor(retryOpts...)))
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-	eventCli := protocol.NewEventServiceClient(conn)
-	apply, err := eventCli.Apply(ctx.Context, &protocol.ApplyRequest{
-		StreamName: "_system",
+	apply, err := store_client.Apply(ctx, "dns:///"+strings.Join(s.Uris, ","), &protocol.ApplyRequest{
+		StreamName: "_system_broker_partition",
 		StreamId:   fmt.Sprintf("%s-%s", broker.Namespace, broker.Name),
 		EventId:    "1",
 		Data:       buffer.Bytes(),
@@ -128,27 +112,10 @@ func sendRequest(add string, buffer *bytes.Buffer) ([]byte, error) {
 	return all, nil
 }
 
-type store struct {
-	Name      string   `json:"name"`
-	Namespace string   `json:"namespace"`
-	Uris      []string `json:"uris"`
-}
-
-type Partition struct {
-	Begin string `json:"begin"`
-	Store store  `json:"store"`
-}
-
-type Configuration struct {
-	Stores     []store     `json:"stores"`
-	Partitions []Partition `json:"partitions"`
-	MaxEventId string      `json:"max_event_id"`
-}
-
-func buildStoreData(list *v15.StoreSetList) []store {
-	data := make([]store, len(list.Items))
+func buildStoreData(list *v15.StoreSetList) []protocol.Store {
+	data := make([]protocol.Store, len(list.Items))
 	for i, item := range list.Items {
-		data[i] = store{Uris: buildStoreUri(item), Name: item.Name, Namespace: item.Namespace}
+		data[i] = protocol.Store{Uris: buildStoreUri(item), Name: item.Name, Namespace: item.Namespace}
 	}
 	return data
 }

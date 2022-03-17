@@ -68,7 +68,7 @@ func NewDispatcher(config *InitConfig) *base.Step {
 			if broker.Status.Dispatcher.Sts.ReadyReplicas != broker.Spec.Dispatcher.Replicas {
 				return false, nil
 			}
-			if err := discovery.StartDispatcherStoreSetDiscovery(ctx, broker); err != nil {
+			if err := discovery.StartDispatcherStoreSetDiscovery(ctx.Context, ctx.GetClient(), broker); err != nil {
 				return false, err
 			}
 

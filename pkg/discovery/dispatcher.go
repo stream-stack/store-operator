@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
-	"time"
+	"sync"
 )
 
 func StartDispatcherStoreSetDiscovery(ctx context.Context, k8sClient client.Client, broker *v1.Broker) error {
@@ -44,27 +44,48 @@ func StartDispatcherStoreSetDiscovery(ctx context.Context, k8sClient client.Clie
 
 	//生成sts地址
 	adds := buildPodAddress(broker)
-	var result []byte
+	var hasParitition bool
+	group := sync.WaitGroup{}
+	group.Add(len(adds))
 	for _, add := range adds {
 		//推送store到dispatcher
-		r, err := sendRequest(add, buffer)
-		if err != nil {
-			return err
-		}
-		result = r
-	}
+		NewStorePusher(add).push(buffer, func(err error, response *http.Response) {
+			defer group.Done()
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			if response.StatusCode != http.StatusOK {
+				fmt.Println(fmt.Errorf("http status not ok(200),current:%v", response.StatusCode))
+			}
+			all, err := ioutil.ReadAll(response.Body)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
 
-	configuration := &protocol.Configuration{}
-	err = json.Unmarshal(result, configuration)
-	if err != nil {
-		return err
+			configuration := &protocol.Configuration{}
+			err = json.Unmarshal(all, configuration)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			if len(configuration.Partitions) > 0 {
+				hasParitition = true
+			}
+			fmt.Println("推送store后返回值: ", string(all))
+		})
 	}
-	if len(configuration.Partitions) > 0 {
+	group.Wait()
+	if hasParitition {
+		fmt.Println("exist first Partition,continue")
 		return nil
 	}
 	//分配第一个分片并推送分片
 	return allocatePartition(ctx, list.Items, storesetData, broker)
 }
+
+const systemBrokerPartition = "_system_broker_partition"
 
 func allocatePartition(ctx context.Context, items []v15.StoreSet, data []protocol.Store, broker *v1.Broker) error {
 	//TODO:根据分片规则分片
@@ -80,8 +101,8 @@ func allocatePartition(ctx context.Context, items []v15.StoreSet, data []protoco
 		return err
 	}
 	apply, err := store_client.Apply(ctx, "dns:///"+strings.Join(s.Uris, ","), &protocol.ApplyRequest{
-		StreamName: "_system_broker_partition",
-		StreamId:   fmt.Sprintf("%s-%s", broker.Namespace, broker.Name),
+		StreamName: systemBrokerPartition,
+		StreamId:   GetDispatcherStreamId(broker),
 		EventId:    "1",
 		Data:       buffer.Bytes(),
 	})
@@ -94,22 +115,12 @@ func allocatePartition(ctx context.Context, items []v15.StoreSet, data []protoco
 	return nil
 }
 
-func sendRequest(add string, buffer *bytes.Buffer) ([]byte, error) {
-	c := http.Client{Timeout: time.Second * 5}
-	post, err := c.Post(add, `application/json`, buffer)
-	if err != nil {
-		return nil, err
-	}
-	defer post.Body.Close()
-	if post.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("http status not ok(200),current:%v", post.StatusCode)
-	}
-	all, err := ioutil.ReadAll(post.Body)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("推送store后返回值: ", string(all))
-	return all, nil
+func GetDispatcherStreamId(b *v1.Broker) string {
+	return fmt.Sprintf("%s-%s", b.Namespace, b.Name)
+}
+
+func GetDispatcherStsName(b *v1.Broker) string {
+	return fmt.Sprintf(`%s-dispatcher`, b.Name)
 }
 
 func buildStoreData(list *v15.StoreSetList) []protocol.Store {
@@ -136,8 +147,7 @@ func buildPodAddress(broker *v1.Broker) []string {
 	addrs := make([]string, replicas)
 	var i int32
 	for ; i < replicas; i++ {
-		//TODO:重构名称的生成,应该和模板统一,使用template的自定义函数
-		addrs[i] = fmt.Sprintf(`%s-dispatcher-%d.%s.%s`, broker.Name, i, broker.Status.Dispatcher.SvcName, broker.GetNamespace())
+		addrs[i] = fmt.Sprintf(`%s-%d.%s.%s`, GetDispatcherStsName(broker), i, broker.Status.Dispatcher.SvcName, broker.GetNamespace())
 	}
 	return addrs
 }

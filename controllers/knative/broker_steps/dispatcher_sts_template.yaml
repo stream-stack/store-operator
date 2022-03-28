@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .ObjectMeta.Name -}}-dispatcher
+  name: {{ GetDispatcherStsName . -}}
   namespace: {{ .ObjectMeta.Namespace }}
   labels:
     module: dispatcher
@@ -10,7 +10,7 @@ metadata:
     {{$key}}: {{$value -}}
 {{end}}
 spec:
-  serviceName: {{ .ObjectMeta.Name -}}-dispatcher
+  serviceName: {{ GetDispatcherStsName . -}}
   replicas: {{ .Spec.Dispatcher.Replicas}}
   selector:
     matchLabels:
@@ -36,6 +36,27 @@ spec:
               name: http-cloudevent
             - containerPort: 8088
               name: grpc-manager
+          env:
+            - name: STREAM_ID
+              value: "{{ GetDispatcherStreamId . }}"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            timeoutSeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            timeoutSeconds: 5
+            periodSeconds: 5
+            successThreshold: 1
+            failureThreshold: 3
 #          command:
 #            - './dispatcher'
 #          workingDir: '/'

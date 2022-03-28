@@ -26,6 +26,10 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	yamlTemplate.Funcs(map[string]interface{}{
+		"GetDispatcherStreamId": discovery.GetDispatcherStreamId,
+		"GetDispatcherStsName":  discovery.GetDispatcherStsName,
+	})
 }
 
 func NewDispatcher(config *InitConfig) *base.Step {

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ .ObjectMeta.Name -}}-dispatcher
+  name: {{ GetDispatcherStsName . -}}
   namespace: {{ .ObjectMeta.Namespace }}
 spec:
   ports:

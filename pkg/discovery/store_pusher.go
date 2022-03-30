@@ -12,7 +12,8 @@ type storePusher struct {
 
 type resultHandler func(err error, response *http.Response)
 
-func (p *storePusher) push(buffer *bytes.Buffer, handler resultHandler) {
+func (p *storePusher) push(data []byte, handler resultHandler) {
+	buffer := bytes.NewBuffer(data)
 	go func() {
 		c := http.Client{Timeout: time.Second * 5}
 		post, err := c.Post(p.addr, `application/json`, buffer)
@@ -30,5 +31,5 @@ func NewStorePusher(addr string) *storePusher {
 }
 
 func buildPusherApiAddress(addr string) string {
-	return addr + ":8080/configuration/stores"
+	return "http://" + addr + ":8080/configuration/stores"
 }

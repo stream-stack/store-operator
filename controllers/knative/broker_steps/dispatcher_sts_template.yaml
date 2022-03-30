@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ GetDispatcherStsName . -}}
+  name: {{ GetDispatcherStsName .}}
   namespace: {{ .ObjectMeta.Namespace }}
   labels:
     module: dispatcher
@@ -10,7 +10,7 @@ metadata:
     {{$key}}: {{$value -}}
 {{end}}
 spec:
-  serviceName: {{ GetDispatcherStsName . -}}
+  serviceName: {{ GetDispatcherStsName .}}
   replicas: {{ .Spec.Dispatcher.Replicas}}
   selector:
     matchLabels:

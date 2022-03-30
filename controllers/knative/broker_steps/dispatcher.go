@@ -22,14 +22,18 @@ var yamlTemplate *template.Template
 
 func init() {
 	var err error
-	yamlTemplate, err = template.ParseFS(templateFs, "*")
+	yamlTemplate, err = template.New("dispatcher").Funcs(map[string]interface{}{
+		"GetDispatcherStreamId": discovery.GetDispatcherStreamId,
+		"GetDispatcherStsName":  discovery.GetDispatcherStsName,
+	}).ParseFS(templateFs, "*")
+	//yamlTemplate, err = template.ParseFS(templateFs, "*")
 	if err != nil {
 		panic(err)
 	}
-	yamlTemplate.Funcs(map[string]interface{}{
-		"GetDispatcherStreamId": discovery.GetDispatcherStreamId,
-		"GetDispatcherStsName":  discovery.GetDispatcherStsName,
-	})
+	//yamlTemplate.Funcs(map[string]interface{}{
+	//	"GetDispatcherStreamId": discovery.GetDispatcherStreamId,
+	//	"GetDispatcherStsName":  discovery.GetDispatcherStsName,
+	//})
 }
 
 func NewDispatcher(config *InitConfig) *base.Step {

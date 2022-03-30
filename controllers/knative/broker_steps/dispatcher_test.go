@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	v1 "github.com/stream-stack/store-operator/apis/knative/v1"
+	"github.com/stream-stack/store-operator/pkg/discovery"
 	v12 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"testing"
@@ -15,7 +16,10 @@ import (
 var a embed.FS
 
 func TestTemplate(t *testing.T) {
-	tmp, err := template.ParseFS(a, "*")
+	tmp, err := template.New("test").Funcs(map[string]interface{}{
+		"GetDispatcherStreamId": discovery.GetDispatcherStreamId,
+		"GetDispatcherStsName":  discovery.GetDispatcherStsName,
+	}).ParseFS(a, "*")
 	if err != nil {
 		panic(err)
 	}
@@ -33,7 +37,7 @@ func TestTemplate(t *testing.T) {
 	//i := make([]byte, 1024,0)
 	//buffer := bytes.NewBuffer(i)
 	buffer := &bytes.Buffer{}
-	_ = tmp.ExecuteTemplate(buffer, "dispatcher_svc_template.yaml", broker)
+	_ = tmp.ExecuteTemplate(buffer, "dispatcher_sts_template.yaml", broker)
 	fmt.Println("渲染后结果：")
 	fmt.Println(string(buffer.Bytes()))
 	d := &v12.Service{}

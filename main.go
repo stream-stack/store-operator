@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"github.com/sirupsen/logrus"
 	"os"
 
 	v1 "github.com/stream-stack/store-operator/apis/storeset/v1"
@@ -71,6 +72,7 @@ func main() {
 	flag.Parse()
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
+	logrus.SetLevel(logrus.TraceLevel)
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,

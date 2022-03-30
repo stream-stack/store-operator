@@ -20,10 +20,10 @@ func init() {
 	v12.StoreSetValidators = append(v12.StoreSetValidators, sts)
 	v12.StoreSetDefaulters = append(v12.StoreSetDefaulters, sts)
 	storeset.Steps = append(storeset.Steps, sts)
-	publisher := NewPublisherSteps(config)
-	v12.StoreSetValidators = append(v12.StoreSetValidators, publisher)
-	v12.StoreSetDefaulters = append(v12.StoreSetDefaulters, publisher)
-	storeset.Steps = append(storeset.Steps, publisher)
+	//publisher := NewPublisherSteps(config)
+	//v12.StoreSetValidators = append(v12.StoreSetValidators, publisher)
+	//v12.StoreSetDefaulters = append(v12.StoreSetDefaulters, publisher)
+	//storeset.Steps = append(storeset.Steps, publisher)
 }
 
 type InitConfig struct {

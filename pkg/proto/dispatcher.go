@@ -7,8 +7,8 @@ type Store struct {
 }
 
 type Partition struct {
-	Begin string `json:"begin"`
-	Store Store  `json:"store"`
+	RangeRegexp string `json:"rangeRegexp"`
+	Store       Store  `json:"store"`
 }
 
 type Configuration struct {

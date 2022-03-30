@@ -1,12 +1,11 @@
 package discovery
 
 import (
-	"bytes"
 	"context"
-	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	_ "github.com/Jille/grpc-multi-resolver"
+	"github.com/sirupsen/logrus"
 	v1 "github.com/stream-stack/store-operator/apis/knative/v1"
 	v15 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	protocol "github.com/stream-stack/store-operator/pkg/proto"
@@ -17,8 +16,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 	"sync"
+	"time"
 )
 
 func StartDispatcherStoreSetDiscovery(ctx context.Context, k8sClient client.Client, broker *v1.Broker) error {
@@ -40,45 +39,48 @@ func StartDispatcherStoreSetDiscovery(ctx context.Context, k8sClient client.Clie
 	if err != nil {
 		return err
 	}
-	buffer := bytes.NewBuffer(marshal)
 
 	//生成sts地址
 	adds := buildPodAddress(broker)
 	var hasParitition bool
-	group := sync.WaitGroup{}
-	group.Add(len(adds))
+	var wg sync.WaitGroup
+
+	handler := func(err error, response *http.Response) {
+		defer wg.Done()
+		if err != nil {
+			logrus.Warnf("推送store出现错误,%v", err)
+			return
+		}
+		if response.StatusCode != http.StatusOK {
+			logrus.Warnf("http status not ok(200),current:%v", response.StatusCode)
+			return
+		}
+		all, err := ioutil.ReadAll(response.Body)
+		if err != nil {
+			logrus.Warnf("读取返回body出现错误,%v", err)
+			return
+		}
+
+		configuration := &protocol.Configuration{}
+		err = json.Unmarshal(all, configuration)
+		if err != nil {
+			logrus.Warnf("反序列化body为Configuration错误,%v", err)
+			return
+		}
+		if len(configuration.Partitions) > 0 {
+			hasParitition = true
+		}
+		logrus.Debugf("推送store后返回值: %s", string(all))
+	}
 	for _, add := range adds {
 		//推送store到dispatcher
-		NewStorePusher(add).push(buffer, func(err error, response *http.Response) {
-			defer group.Done()
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			if response.StatusCode != http.StatusOK {
-				fmt.Println(fmt.Errorf("http status not ok(200),current:%v", response.StatusCode))
-			}
-			all, err := ioutil.ReadAll(response.Body)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-
-			configuration := &protocol.Configuration{}
-			err = json.Unmarshal(all, configuration)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
-			if len(configuration.Partitions) > 0 {
-				hasParitition = true
-			}
-			fmt.Println("推送store后返回值: ", string(all))
-		})
+		wg.Add(1)
+		NewStorePusher(add).push(marshal, handler)
 	}
-	group.Wait()
+	wg.Wait()
+	logrus.Debugf("推送后,是否存在partition:%v", hasParitition)
 	if hasParitition {
-		fmt.Println("exist first Partition,continue")
+		logrus.Debugf("exist first Partition,continue")
 		return nil
 	}
 	//分配第一个分片并推送分片
@@ -88,30 +90,33 @@ func StartDispatcherStoreSetDiscovery(ctx context.Context, k8sClient client.Clie
 const systemBrokerPartition = "_system_broker_partition"
 
 func allocatePartition(ctx context.Context, items []v15.StoreSet, data []protocol.Store, broker *v1.Broker) error {
+	logrus.Debugf("开始分配分片,storeset:%d", len(items))
+	timeout, cancelFunc := context.WithTimeout(ctx, time.Second*10)
+	defer cancelFunc()
 	//TODO:根据分片规则分片
 	intn := rand.Intn(len(items))
 	//set := items[intn]
 	s := data[intn]
-	buffer := &bytes.Buffer{}
-	err := binary.Write(buffer, binary.BigEndian, protocol.Partition{
-		Begin: "0",
-		Store: s,
+	//buffer := &bytes.Buffer{}
+	marshal, err := json.Marshal(protocol.Partition{
+		RangeRegexp: "[0-9]{1,5}",
+		Store:       s,
 	})
 	if err != nil {
+		logrus.Errorf("序列化分片数据错误,%v", err)
 		return err
 	}
-	apply, err := store_client.Apply(ctx, "dns:///"+strings.Join(s.Uris, ","), &protocol.ApplyRequest{
+	apply, err := store_client.Apply(timeout, s.Uris, &protocol.ApplyRequest{
 		StreamName: systemBrokerPartition,
 		StreamId:   GetDispatcherStreamId(broker),
 		EventId:    "1",
-		Data:       buffer.Bytes(),
+		Data:       marshal,
 	})
 	if err != nil {
+		logrus.Errorf("写入分片出现错误,%v", err)
 		return err
 	}
-	fmt.Println("写入第一个分片完成")
-	fmt.Println(apply)
-
+	logrus.Debugf("写入分片完成,返回值:%+v", apply)
 	return nil
 }
 

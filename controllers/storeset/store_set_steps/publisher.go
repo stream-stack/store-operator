@@ -5,6 +5,7 @@ import (
 	"fmt"
 	v12 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
+	"github.com/stream-stack/store-operator/pkg/store_client"
 	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"reflect"
@@ -34,7 +35,7 @@ func NewPublisherSteps(cfg *InitConfig) *base.Step {
 			d.Spec.Replicas = c.Spec.Publisher.Replicas
 			container := d.Spec.Template.Spec.Containers[0]
 			container.Image = c.Spec.Publisher.Image
-			container.Args = []string{fmt.Sprintf(container.Args[0], c.Status.StoreStatus.ServiceName, c.Namespace, containerPort.IntVal)}
+			container.Args = []string{fmt.Sprintf(container.Args[0], c.Status.StoreStatus.ServiceName, c.Namespace, store_client.StoreContainerPort.IntVal)}
 			d.Spec.Template.Spec.Containers[0] = container
 
 			return d, nil

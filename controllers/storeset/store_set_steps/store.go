@@ -7,12 +7,12 @@ import (
 	"github.com/go-logr/logr"
 	v14 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
+	"github.com/stream-stack/store-operator/pkg/store_client"
 	"google.golang.org/grpc"
 	v13 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"reflect"
 	"strconv"
@@ -39,8 +39,8 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 						{
 							Name:       "grpc-store",
 							Protocol:   v12.ProtocolTCP,
-							Port:       containerPort.IntVal,
-							TargetPort: containerPort,
+							Port:       store_client.StoreContainerPort.IntVal,
+							TargetPort: store_client.StoreContainerPort,
 						},
 					},
 					Selector: c.Labels,
@@ -151,7 +151,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 									Ports: []v12.ContainerPort{
 										{
 											Name:          "grpc-store",
-											ContainerPort: containerPort.IntVal,
+											ContainerPort: store_client.StoreContainerPort.IntVal,
 											Protocol:      v12.ProtocolTCP,
 										},
 									},
@@ -171,7 +171,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 									LivenessProbe: &v12.Probe{
 										ProbeHandler: v12.ProbeHandler{
 											TCPSocket: &v12.TCPSocketAction{
-												Port: containerPort,
+												Port: store_client.StoreContainerPort,
 											},
 										},
 										InitialDelaySeconds:           3,
@@ -184,7 +184,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 									ReadinessProbe: &v12.Probe{
 										ProbeHandler: v12.ProbeHandler{
 											TCPSocket: &v12.TCPSocketAction{
-												Port: containerPort,
+												Port: store_client.StoreContainerPort,
 											},
 										},
 										InitialDelaySeconds:           3,
@@ -385,7 +385,7 @@ func getNodeInfos(logger logr.Logger, c *v14.StoreSet, replicas int32) ([]*nodeI
 	nodes := make([]*nodeInfo, 0)
 	for ; i < replicas; i++ {
 		hostname := fmt.Sprintf(`%s-%d`, c.Status.StoreStatus.WorkloadName, i)
-		address := fmt.Sprintf(`%s.%s.%s.svc:%d`, hostname, c.Status.StoreStatus.ServiceName, c.Namespace, containerPort.IntVal)
+		address := fmt.Sprintf(`%s.%s.%s.svc:%d`, hostname, c.Status.StoreStatus.ServiceName, c.Namespace, store_client.StoreContainerPort.IntVal)
 
 		logger.Info("try connect statefulset pod", "address", address)
 		timeout, cancelFunc := context.WithTimeout(context.TODO(), defaultGrpcTimeOut)
@@ -418,8 +418,6 @@ func getNodeInfos(logger logr.Logger, c *v14.StoreSet, replicas int32) ([]*nodeI
 
 const topologyKeyHostname = "kubernetes.io/hostname"
 const defaultGrpcTimeOut = time.Second * 5
-
-var containerPort = intstr.FromInt(50051)
 
 type nodeInfo struct {
 	addr         string

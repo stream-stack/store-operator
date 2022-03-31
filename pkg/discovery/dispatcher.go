@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 	v1 "github.com/stream-stack/store-operator/apis/knative/v1"
 	v15 "github.com/stream-stack/store-operator/apis/storeset/v1"
-	protocol "github.com/stream-stack/store-operator/pkg/proto"
+	"github.com/stream-stack/store-operator/pkg/proto"
 	"github.com/stream-stack/store-operator/pkg/store_client"
 	_ "google.golang.org/grpc/health"
 	"io/ioutil"
@@ -61,7 +61,7 @@ func StartDispatcherStoreSetDiscovery(ctx context.Context, k8sClient client.Clie
 			return
 		}
 
-		configuration := &protocol.Configuration{}
+		configuration := &proto.Configuration{}
 		err = json.Unmarshal(all, configuration)
 		if err != nil {
 			logrus.Warnf("反序列化body为Configuration错误,%v", err)
@@ -89,7 +89,7 @@ func StartDispatcherStoreSetDiscovery(ctx context.Context, k8sClient client.Clie
 
 const systemBrokerPartition = "_system_broker_partition"
 
-func allocatePartition(ctx context.Context, items []v15.StoreSet, data []protocol.Store, broker *v1.Broker) error {
+func allocatePartition(ctx context.Context, items []v15.StoreSet, data []proto.Store, broker *v1.Broker) error {
 	logrus.Debugf("开始分配分片,storeset:%d", len(items))
 	timeout, cancelFunc := context.WithTimeout(ctx, time.Second*10)
 	defer cancelFunc()
@@ -98,7 +98,7 @@ func allocatePartition(ctx context.Context, items []v15.StoreSet, data []protoco
 	//set := items[intn]
 	s := data[intn]
 	//buffer := &bytes.Buffer{}
-	marshal, err := json.Marshal(protocol.Partition{
+	marshal, err := json.Marshal(proto.Partition{
 		RangeRegexp: "[0-9]{1,5}",
 		Store:       s,
 	})
@@ -106,7 +106,7 @@ func allocatePartition(ctx context.Context, items []v15.StoreSet, data []protoco
 		logrus.Errorf("序列化分片数据错误,%v", err)
 		return err
 	}
-	apply, err := store_client.Apply(timeout, s.Uris, &protocol.ApplyRequest{
+	apply, err := store_client.Apply(timeout, s.Uris, &proto.ApplyRequest{
 		StreamName: systemBrokerPartition,
 		StreamId:   GetDispatcherStreamId(broker),
 		EventId:    "1",
@@ -128,10 +128,10 @@ func GetDispatcherStsName(b *v1.Broker) string {
 	return fmt.Sprintf(`%s-dispatcher`, b.Name)
 }
 
-func buildStoreData(list *v15.StoreSetList) []protocol.Store {
-	data := make([]protocol.Store, len(list.Items))
+func buildStoreData(list *v15.StoreSetList) []proto.Store {
+	data := make([]proto.Store, len(list.Items))
 	for i, item := range list.Items {
-		data[i] = protocol.Store{Uris: buildStoreUri(item), Name: item.Name, Namespace: item.Namespace}
+		data[i] = proto.Store{Uris: buildStoreUri(item), Name: item.Name, Namespace: item.Namespace}
 	}
 	return data
 }
@@ -142,7 +142,7 @@ func buildStoreUri(item v15.StoreSet) []string {
 	var i int32
 	for ; i < replicas; i++ {
 		//TODO:重构名称的生成,应该和模板统一,使用template的自定义函数
-		addrs[i] = fmt.Sprintf(`%s-%d.%s.%s`, item.Name, i, item.Status.StoreStatus.ServiceName, item.Namespace)
+		addrs[i] = fmt.Sprintf(`%s-%d.%s.%s:%s`, item.Name, i, item.Status.StoreStatus.ServiceName, item.Namespace, store_client.StoreContainerPort.String())
 	}
 	return addrs
 }

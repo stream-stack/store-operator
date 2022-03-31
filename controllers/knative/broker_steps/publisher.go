@@ -6,6 +6,7 @@ import (
 	"fmt"
 	v14 "github.com/stream-stack/store-operator/apis/knative/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
+	"github.com/stream-stack/store-operator/pkg/discovery"
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
@@ -20,7 +21,10 @@ var publisherYamlTemplate *template.Template
 
 func init() {
 	var err error
-	publisherYamlTemplate, err = template.ParseFS(publisherTemplateFs, "*")
+	publisherYamlTemplate, err = template.New("publisher").Funcs(map[string]interface{}{
+		"GetPublisherStsName":       discovery.GetPublisherStsName,
+		"GetPublisherContainerPort": discovery.GetPublisherContainerPort,
+	}).ParseFS(publisherTemplateFs, "*")
 	if err != nil {
 		panic(err)
 	}
@@ -66,6 +70,11 @@ func NewPublisher(config *InitConfig) *base.Step {
 			//todo:将符合selector的subscription地址推送到publisher
 			if broker.Status.Publisher.Sts.ReadyReplicas == broker.Spec.Publisher.Replicas {
 				return true, nil
+			}
+
+			err := discovery.PublisherStoreSetPush(ctx.Context, ctx.GetClient(), broker)
+			if err != nil {
+				return false, err
 			}
 
 			return false, nil

@@ -1,0 +1,39 @@
+syntax = "proto3";
+option go_package = "../proto";
+
+service XdsService {
+  rpc StoreSetPush (StoreSetPushRequest) returns (StoreSetPushResponse) {
+  }
+  rpc SubscriberPush (SubscriberPushRequest) returns (SubscriberPushResponse) {
+  }
+  rpc AllocatePartition (AllocatePartitionRequest) returns (stream AllocatePartitionResponse) {
+  }
+}
+
+message AllocatePartitionRequest{
+}
+message AllocatePartitionResponse{
+
+}
+
+message SubscriberPushRequest{
+
+}
+message SubscriberPushResponse{
+
+}
+
+// 请求信息
+message StoreSetPushRequest {
+  repeated StoreSet stores = 1;
+}
+
+message StoreSet{
+  string name = 1;
+  string Namespace = 2;
+  repeated string uris = 3;
+}
+
+message StoreSetPushResponse{
+}
+

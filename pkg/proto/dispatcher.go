@@ -1,4 +1,4 @@
-package protocol
+package proto
 
 type Store struct {
 	Name      string   `json:"name"`

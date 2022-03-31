@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ .ObjectMeta.Name -}}-publisher
+  name: {{ GetPublisherStsName .}}
   namespace: {{ .ObjectMeta.Namespace }}
   labels:
     module: publisher
@@ -10,7 +10,7 @@ metadata:
     {{$key}}: {{$value -}}
 {{end}}
 spec:
-  serviceName: {{ .ObjectMeta.Name -}}-publisher
+  serviceName: {{ GetPublisherStsName .}}
   replicas: {{ .Spec.Publisher.Replicas}}
   selector:
     matchLabels:
@@ -32,12 +32,12 @@ spec:
         - name: publisher
           image: {{ .Spec.Publisher.Image }}
           ports:
-            - containerPort: 8088
+            - containerPort: {{ GetPublisherContainerPort }}
               name: grpc-manager
           livenessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: {{ GetPublisherContainerPort }}
             initialDelaySeconds: 3
             timeoutSeconds: 5
             periodSeconds: 5
@@ -46,7 +46,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: {{ GetPublisherContainerPort }}
             initialDelaySeconds: 3
             timeoutSeconds: 5
             periodSeconds: 5

@@ -34,7 +34,7 @@ spec:
           ports:
             - containerPort: 80
               name: http-cloudevent
-            - containerPort: 8088
+            - containerPort: {{ GetPublisherContainerPort }}
               name: grpc-manager
           env:
             - name: STREAM_NAME
@@ -42,7 +42,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: {{ GetPublisherContainerPort }}
             initialDelaySeconds: 3
             timeoutSeconds: 5
             periodSeconds: 5
@@ -51,7 +51,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: 8080
+              port: {{ GetPublisherContainerPort }}
             initialDelaySeconds: 3
             timeoutSeconds: 5
             periodSeconds: 5

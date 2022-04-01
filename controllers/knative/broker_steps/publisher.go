@@ -2,6 +2,7 @@ package store_set_steps
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	"fmt"
 	v14 "github.com/stream-stack/store-operator/apis/knative/v1"
@@ -11,6 +12,7 @@ import (
 	v12 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"text/template"
 )
 
@@ -89,6 +91,11 @@ func NewPublisher(config *InitConfig) *base.Step {
 				c.Spec.Publisher.Replicas = config.PublisherReplicas
 			}
 			//TODO:partition default value set
+		},
+		Del: func(ctx context.Context, c base.StepObject, client client.Client) error {
+			t := c.(*v14.Broker)
+			discovery.DeletePublisherConn(t)
+			return nil
 		},
 	}
 	svc := &base.Step{

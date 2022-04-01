@@ -282,6 +282,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 				return false, err
 			}
 
+			//TODO:推送新的storeset到dispatcher,publisher
 			return true, nil
 		},
 		SetDefault: func(set base.StepObject) {

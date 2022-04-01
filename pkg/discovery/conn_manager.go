@@ -10,6 +10,7 @@ import (
 )
 
 var PushChan = make(chan PushAction, 1)
+var DeleteConnChan = make(chan string, 1)
 
 func StartPushChan(ctx context.Context) {
 	defer func() {
@@ -26,13 +27,25 @@ func StartPushChan(ctx context.Context) {
 			conn, err := getConnection(action.Addr)
 			if err != nil {
 				logrus.Warnf("无法获取连接,%v", err)
+				action.Result <- err
 				continue
 			}
 			serviceClient := proto.NewXdsServiceClient(conn)
 			err = action.Action(serviceClient)
 			if err != nil {
 				logrus.Warnf("推送出现错误,%v", err)
+				action.Result <- err
 			}
+		case del := <-DeleteConnChan:
+			logrus.Infof("清理连接%s", del)
+			conn, ok := connections[del]
+			if !ok {
+				logrus.Infof("未找到连接%s,跳过", del)
+				continue
+			}
+			delete(connections, del)
+			_ = conn.Close()
+			logrus.Infof("清理连接%s完成,连接关闭完成", del)
 		}
 	}
 }
@@ -40,6 +53,7 @@ func StartPushChan(ctx context.Context) {
 type PushAction struct {
 	Addr   string
 	Action func(client proto.XdsServiceClient) error
+	Result chan error
 }
 
 var connections map[string]*grpc.ClientConn

@@ -2,6 +2,7 @@ package store_set_steps
 
 import (
 	"bytes"
+	"context"
 	"embed"
 	_ "embed"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	v12 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"reflect"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"text/template"
 )
 
@@ -23,8 +25,9 @@ var yamlTemplate *template.Template
 func init() {
 	var err error
 	yamlTemplate, err = template.New("dispatcher").Funcs(map[string]interface{}{
-		"GetStreamName":        discovery.GetStreamName,
-		"GetDispatcherStsName": discovery.GetDispatcherStsName,
+		"GetStreamName":              discovery.GetStreamName,
+		"GetDispatcherStsName":       discovery.GetDispatcherStsName,
+		"GetDispatcherContainerPort": discovery.GetDispatcherContainerPort,
 	}).ParseFS(templateFs, "*")
 	if err != nil {
 		panic(err)
@@ -86,6 +89,11 @@ func NewDispatcher(config *InitConfig) *base.Step {
 				c.Spec.Dispatcher.Replicas = config.DispatcherReplicas
 			}
 			//TODO:partition default value set
+		},
+		Del: func(ctx context.Context, c base.StepObject, client client.Client) error {
+			broker := c.(*v14.Broker)
+			discovery.DeleteDispatcherConn(broker)
+			return nil
 		},
 	}
 	svc := &base.Step{

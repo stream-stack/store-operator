@@ -9,9 +9,9 @@ spec:
       protocol: TCP
       targetPort: 80
       name: http-cloudevent
-    - port: 8088
+    - port: {{ GetPublisherContainerPort }}
       protocol: TCP
-      targetPort: 8088
+      targetPort: {{ GetPublisherContainerPort }}
       name: grpc-manager
   selector:
     module: dispatcher

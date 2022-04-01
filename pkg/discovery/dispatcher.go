@@ -152,7 +152,20 @@ func buildPodAddress(broker *v1.Broker) []string {
 	addrs := make([]string, replicas)
 	var i int32
 	for ; i < replicas; i++ {
-		addrs[i] = fmt.Sprintf(`%s-%d.%s.%s`, GetDispatcherStsName(broker), i, broker.Status.Dispatcher.SvcName, broker.GetNamespace())
+		addrs[i] = fmt.Sprintf(`%s-%d.%s.%s:%s`, GetDispatcherStsName(broker), i, broker.Status.Dispatcher.SvcName, broker.GetNamespace(), DispatcherContainerPort)
 	}
 	return addrs
+}
+
+func DeleteDispatcherConn(broker *v1.Broker) {
+	address := buildPodAddress(broker)
+	for _, s := range address {
+		DeleteConnChan <- s
+	}
+}
+
+const DispatcherContainerPort = `8080`
+
+func GetDispatcherContainerPort() string {
+	return DispatcherContainerPort
 }

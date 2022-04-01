@@ -38,14 +38,15 @@ func PublisherStoreSetPush(ctx context.Context, k8sClient client.Client, broker 
 		})
 		return err
 	}
+	c := make(chan error, 1)
 	for _, addr := range addrs {
 		PushChan <- PushAction{
 			Addr:   addr,
 			Action: action,
+			Result: c,
 		}
 	}
-	//TODO:这里如何传出推送错误等情况?
-	return nil
+	return <-c
 }
 
 func buildStoreSetData(items []v15.StoreSet) []*proto.StoreSet {
@@ -58,6 +59,13 @@ func buildStoreSetData(items []v15.StoreSet) []*proto.StoreSet {
 		}
 	}
 	return sets
+}
+
+func DeletePublisherConn(broker *v1.Broker) {
+	addr := buildPublisherPodAddr(broker)
+	for _, s := range addr {
+		DeleteConnChan <- s
+	}
 }
 
 func buildPublisherPodAddr(broker *v1.Broker) []string {

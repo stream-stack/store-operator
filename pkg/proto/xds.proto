@@ -13,7 +13,7 @@ service XdsService {
 message AllocatePartitionRequest{
 }
 message AllocatePartitionResponse{
-
+  uint64 partitionCount = 1;
 }
 
 message SubscriberPushRequest{

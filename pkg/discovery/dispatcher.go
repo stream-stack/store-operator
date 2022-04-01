@@ -11,16 +11,13 @@ import (
 	"github.com/stream-stack/store-operator/pkg/proto"
 	"github.com/stream-stack/store-operator/pkg/store_client"
 	_ "google.golang.org/grpc/health"
-	"io/ioutil"
 	v13 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
-	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sync"
 	"time"
 )
 
-func StartDispatcherStoreSetDiscovery(ctx context.Context, k8sClient client.Client, broker *v1.Broker) error {
+func DispatcherStoreSetPush(ctx context.Context, k8sClient client.Client, broker *v1.Broker) error {
 	var err error
 	list := &v15.StoreSetList{}
 	selectorMap, err := v13.LabelSelectorAsMap(broker.Spec.Selector)
@@ -35,57 +32,76 @@ func StartDispatcherStoreSetDiscovery(ctx context.Context, k8sClient client.Clie
 		return nil
 	}
 	storesetData := buildStoreData(list)
-	marshal, err := json.Marshal(storesetData)
-	if err != nil {
+	//生成sts地址
+	adds := buildDispatcherAddress(broker)
+	b := *broker
+	action := func(addr string, client proto.XdsServiceClient) error {
+		//启动分片器
+		allocator := NewPartitionAllocator(b, k8sClient, client, addr)
+		Allocators[getBrokerAllocatorName(b)] = allocator
+		go allocator.Start(ctx)
+
+		_, err := client.StoreSetPush(ctx, &proto.StoreSetPushRequest{
+			Stores: storesetData,
+		})
 		return err
 	}
-
-	//生成sts地址
-	adds := buildPodAddress(broker)
-	var hasParitition bool
-	var wg sync.WaitGroup
-
-	handler := func(err error, response *http.Response) {
-		defer wg.Done()
-		if err != nil {
-			logrus.Warnf("推送store出现错误,%v", err)
-			return
+	c := make(chan error, 1)
+	for _, addr := range adds {
+		ConnActionCh <- ConnAction{
+			Addr:   addr,
+			Action: action,
+			Result: c,
 		}
-		if response.StatusCode != http.StatusOK {
-			logrus.Warnf("http status not ok(200),current:%v", response.StatusCode)
-			return
-		}
-		all, err := ioutil.ReadAll(response.Body)
-		if err != nil {
-			logrus.Warnf("读取返回body出现错误,%v", err)
-			return
-		}
-
-		configuration := &proto.Configuration{}
-		err = json.Unmarshal(all, configuration)
-		if err != nil {
-			logrus.Warnf("反序列化body为Configuration错误,%v", err)
-			return
-		}
-		if len(configuration.Partitions) > 0 {
-			hasParitition = true
-		}
-		logrus.Debugf("推送store后返回值: %s", string(all))
 	}
-	for _, add := range adds {
-		//推送store到dispatcher
-		wg.Add(1)
-		NewStorePusher(add).push(marshal, handler)
-	}
-	wg.Wait()
-	logrus.Debugf("推送后,是否存在partition:%v", hasParitition)
-	if hasParitition {
-		logrus.Debugf("exist first Partition,continue")
-		return nil
-	}
-	//分配第一个分片并推送分片
-	return allocatePartition(ctx, list.Items, storesetData, broker)
+	return <-c
 }
+
+//func StartPartitionAllocator(ctx context.Context, k8sClient client.Client, broker *v1.Broker) error {
+//	//生成sts地址
+//	adds := buildDispatcherAddress(broker)
+//	b := *broker
+//	action := func(addr string, client proto.XdsServiceClient) error {
+//		//1.检查是否存在Allocator
+//		allocator := getAllocator(b)
+//		if allocator != nil {
+//			return nil
+//		}
+//		//2.如果不存在,则启动
+//		allocator = NewPartitionAllocator(b, k8sClient, client, addr)
+//		Allocators[getBrokerAllocatorName(b)] = allocator
+//		go allocator.Start(ctx)
+//		return nil
+//	}
+//	c := make(chan error, 1)
+//	for _, addr := range adds {
+//		ConnActionCh <- ConnAction{
+//			Addr:   addr,
+//			Action: action,
+//			Result: c,
+//		}
+//	}
+//	return <-c
+//}
+//
+//func StopPartitionAllocator(broker *v1.Broker) {
+//	//生成sts地址
+//	adds := buildDispatcherAddress(broker)
+//	action := func(addr string, client proto.XdsServiceClient) error {
+//		allocator := getAllocator(*broker)
+//		if allocator == nil {
+//			return nil
+//		}
+//		allocator.Stop()
+//		return nil
+//	}
+//	for _, addr := range adds {
+//		ConnActionCh <- ConnAction{
+//			Addr:   addr,
+//			Action: action,
+//		}
+//	}
+//}
 
 const systemBrokerPartition = "_system_broker_partition"
 
@@ -128,10 +144,10 @@ func GetDispatcherStsName(b *v1.Broker) string {
 	return fmt.Sprintf(`%s-dispatcher`, b.Name)
 }
 
-func buildStoreData(list *v15.StoreSetList) []proto.Store {
-	data := make([]proto.Store, len(list.Items))
+func buildStoreData(list *v15.StoreSetList) []*proto.StoreSet {
+	data := make([]*proto.StoreSet, len(list.Items))
 	for i, item := range list.Items {
-		data[i] = proto.Store{Uris: buildStoreUri(item), Name: item.Name, Namespace: item.Namespace}
+		data[i] = &proto.StoreSet{Uris: buildStoreUri(item), Name: item.Name, Namespace: item.Namespace}
 	}
 	return data
 }
@@ -147,7 +163,7 @@ func buildStoreUri(item v15.StoreSet) []string {
 	return addrs
 }
 
-func buildPodAddress(broker *v1.Broker) []string {
+func buildDispatcherAddress(broker *v1.Broker) []string {
 	replicas := broker.Spec.Dispatcher.Replicas
 	addrs := make([]string, replicas)
 	var i int32
@@ -158,9 +174,21 @@ func buildPodAddress(broker *v1.Broker) []string {
 }
 
 func DeleteDispatcherConn(broker *v1.Broker) {
-	address := buildPodAddress(broker)
+	address := buildDispatcherAddress(broker)
 	for _, s := range address {
-		DeleteConnChan <- s
+		ConnDeleteCh <- ConnAction{
+			Addr: s,
+			Action: func(addr string, client proto.XdsServiceClient) error {
+				allocator := getAllocator(*broker)
+				if allocator == nil {
+					return nil
+				}
+				allocator.Stop()
+				name := getBrokerAllocatorName(*broker)
+				delete(Allocators, name)
+				return nil
+			},
+		}
 	}
 }
 

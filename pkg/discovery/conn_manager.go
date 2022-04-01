@@ -9,8 +9,17 @@ import (
 	"time"
 )
 
-var PushChan = make(chan PushAction, 1)
-var DeleteConnChan = make(chan string, 1)
+var ConnActionCh = make(chan ConnAction, 1)
+var ConnDeleteCh = make(chan ConnAction, 1)
+
+//type PartitionAllocator struct {
+//	Addr   string
+//	Action func(client proto.XdsServiceClient) error
+//	Result chan error
+//}
+//
+//var PartitionAllocatorAddCh = make(chan PartitionAllocator, 1)
+//var PartitionAllocatorDeleteCh = make(chan PartitionAllocator, 1)
 
 func StartPushChan(ctx context.Context) {
 	defer func() {
@@ -22,37 +31,44 @@ func StartPushChan(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case action := <-PushChan:
+		case action := <-ConnActionCh:
 			//获取grpc连接,如果没有,则新建
 			conn, err := getConnection(action.Addr)
 			if err != nil {
 				logrus.Warnf("无法获取连接,%v", err)
 				action.Result <- err
+				close(action.Result)
 				continue
 			}
-			serviceClient := proto.NewXdsServiceClient(conn)
-			err = action.Action(serviceClient)
-			if err != nil {
-				logrus.Warnf("推送出现错误,%v", err)
-				action.Result <- err
+			if action.Action != nil {
+				serviceClient := proto.NewXdsServiceClient(conn)
+				err = action.Action(action.Addr, serviceClient)
+				if err != nil {
+					logrus.Warnf("推送出现错误,%v", err)
+					action.Result <- err
+				}
 			}
-		case del := <-DeleteConnChan:
-			logrus.Infof("清理连接%s", del)
-			conn, ok := connections[del]
+			close(action.Result)
+		case del := <-ConnDeleteCh:
+			logrus.Infof("清理连接%s", del.Addr)
+			if del.Action != nil {
+				_ = del.Action(del.Addr, nil)
+			}
+			conn, ok := connections[del.Addr]
 			if !ok {
-				logrus.Infof("未找到连接%s,跳过", del)
+				logrus.Infof("未找到连接%s,跳过", del.Addr)
 				continue
 			}
-			delete(connections, del)
+			delete(connections, del.Addr)
 			_ = conn.Close()
-			logrus.Infof("清理连接%s完成,连接关闭完成", del)
+			logrus.Infof("清理连接%s完成,连接关闭完成", del.Addr)
 		}
 	}
 }
 
-type PushAction struct {
+type ConnAction struct {
 	Addr   string
-	Action func(client proto.XdsServiceClient) error
+	Action func(addr string, client proto.XdsServiceClient) error
 	Result chan error
 }
 

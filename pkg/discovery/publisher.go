@@ -32,7 +32,7 @@ func PublisherStoreSetPush(ctx context.Context, k8sClient client.Client, broker 
 
 	//推送storeset
 	addrs := buildPublisherPodAddr(broker)
-	action := func(client proto.XdsServiceClient) error {
+	action := func(addr string, client proto.XdsServiceClient) error {
 		_, err := client.StoreSetPush(ctx, &proto.StoreSetPushRequest{
 			Stores: data,
 		})
@@ -40,7 +40,7 @@ func PublisherStoreSetPush(ctx context.Context, k8sClient client.Client, broker 
 	}
 	c := make(chan error, 1)
 	for _, addr := range addrs {
-		PushChan <- PushAction{
+		ConnActionCh <- ConnAction{
 			Addr:   addr,
 			Action: action,
 			Result: c,
@@ -64,7 +64,9 @@ func buildStoreSetData(items []v15.StoreSet) []*proto.StoreSet {
 func DeletePublisherConn(broker *v1.Broker) {
 	addr := buildPublisherPodAddr(broker)
 	for _, s := range addr {
-		DeleteConnChan <- s
+		ConnDeleteCh <- ConnAction{
+			Addr: s,
+		}
 	}
 }
 

@@ -37,8 +37,8 @@ spec:
             - containerPort: 8088
               name: grpc-manager
           env:
-            - name: STREAM_ID
-              value: "{{ GetDispatcherStreamId . }}"
+            - name: STREAM_NAME
+              value: "{{ GetStreamName . }}"
           livenessProbe:
             httpGet:
               path: /health

@@ -17,8 +17,8 @@ var a embed.FS
 
 func TestTemplate(t *testing.T) {
 	tmp, err := template.New("test").Funcs(map[string]interface{}{
-		"GetDispatcherStreamId": discovery.GetDispatcherStreamId,
-		"GetDispatcherStsName":  discovery.GetDispatcherStsName,
+		"GetStreamName":        discovery.GetStreamName,
+		"GetDispatcherStsName": discovery.GetDispatcherStsName,
 	}).ParseFS(a, "*")
 	if err != nil {
 		panic(err)

@@ -24,6 +24,7 @@ func init() {
 	publisherYamlTemplate, err = template.New("publisher").Funcs(map[string]interface{}{
 		"GetPublisherStsName":       discovery.GetPublisherStsName,
 		"GetPublisherContainerPort": discovery.GetPublisherContainerPort,
+		"GetStreamName":             discovery.GetStreamName,
 	}).ParseFS(publisherTemplateFs, "*")
 	if err != nil {
 		panic(err)

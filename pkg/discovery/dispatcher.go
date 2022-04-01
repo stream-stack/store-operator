@@ -108,7 +108,7 @@ func allocatePartition(ctx context.Context, items []v15.StoreSet, data []proto.S
 	}
 	apply, err := store_client.Apply(timeout, s.Uris, &proto.ApplyRequest{
 		StreamName: systemBrokerPartition,
-		StreamId:   GetDispatcherStreamId(broker),
+		StreamId:   GetStreamName(broker),
 		EventId:    "1",
 		Data:       marshal,
 	})
@@ -120,7 +120,7 @@ func allocatePartition(ctx context.Context, items []v15.StoreSet, data []proto.S
 	return nil
 }
 
-func GetDispatcherStreamId(b *v1.Broker) string {
+func GetStreamName(b *v1.Broker) string {
 	return fmt.Sprintf("%s-%s", b.Namespace, b.Name)
 }
 

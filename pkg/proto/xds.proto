@@ -10,10 +10,16 @@ service XdsService {
   }
 }
 
+message Partition{
+  uint64 begin = 1;
+  StoreSet store = 2;
+}
+
 message AllocatePartitionRequest{
 }
 message AllocatePartitionResponse{
   uint64 partitionCount = 1;
+  repeated string prevStoreUri = 2;
 }
 
 message SubscriberPushRequest{

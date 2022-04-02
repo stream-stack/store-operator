@@ -74,6 +74,9 @@ func NewDispatcher(config *InitConfig) *base.Step {
 			if broker.Status.Dispatcher.Sts.ReadyReplicas != broker.Spec.Dispatcher.Replicas {
 				return false, nil
 			}
+			if err := discovery.StartAllocatorGroupWithBroker(ctx.Context, ctx.GetClient(), broker); err != nil {
+				return false, err
+			}
 			if err := discovery.DispatcherStoreSetPush(ctx.Context, ctx.GetClient(), broker); err != nil {
 				return false, err
 			}
@@ -92,6 +95,7 @@ func NewDispatcher(config *InitConfig) *base.Step {
 		},
 		Del: func(ctx context.Context, c base.StepObject, client client.Client) error {
 			broker := c.(*v14.Broker)
+			discovery.DeleteAllocator(broker)
 			discovery.DeleteDispatcherConn(broker)
 			return nil
 		},

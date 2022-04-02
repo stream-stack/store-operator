@@ -135,7 +135,8 @@ func main() {
 		os.Exit(1)
 	}
 	handler := ctrl.SetupSignalHandler()
-	discovery.StartPushChan(handler)
+	go discovery.StartPushChan(handler)
+	go discovery.StartAllocatorGroup(handler)
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(handler); err != nil {

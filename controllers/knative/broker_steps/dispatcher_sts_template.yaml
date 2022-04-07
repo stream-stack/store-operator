@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .ObjectMeta.Namespace }}
   labels:
     module: dispatcher
-    broker: {{ .ObjectMeta.Name }}
+    broker: {{ .ObjectMeta.Name -}}
 {{range $key,$value := .ObjectMeta.Labels}}
     {{$key}}: {{$value -}}
 {{end}}
@@ -15,7 +15,7 @@ spec:
   selector:
     matchLabels:
       module: dispatcher
-      broker: {{ .ObjectMeta.Name }}
+      broker: {{ .ObjectMeta.Name -}}
 {{range $key,$value := .ObjectMeta.Labels}}
       {{$key}}: {{$value -}}
 {{end}}
@@ -23,7 +23,7 @@ spec:
     metadata:
       labels:
         module: dispatcher
-        broker: {{ .ObjectMeta.Name }}
+        broker: {{ .ObjectMeta.Name -}}
 {{range $key,$value := .ObjectMeta.Labels}}
         {{$key}}: {{$value -}}
 {{end}}
@@ -34,7 +34,7 @@ spec:
           ports:
             - containerPort: 80
               name: http-cloudevent
-            - containerPort: {{ GetPublisherContainerPort }}
+            - containerPort: {{ GetDispatcherContainerPort }}
               name: grpc-manager
           env:
             - name: STREAM_NAME
@@ -42,7 +42,7 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: {{ GetPublisherContainerPort }}
+              port: {{ GetDispatcherContainerPort }}
             initialDelaySeconds: 3
             timeoutSeconds: 5
             periodSeconds: 5
@@ -51,7 +51,7 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: {{ GetPublisherContainerPort }}
+              port: {{ GetDispatcherContainerPort }}
             initialDelaySeconds: 3
             timeoutSeconds: 5
             periodSeconds: 5

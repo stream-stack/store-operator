@@ -9,13 +9,13 @@ spec:
       protocol: TCP
       targetPort: 80
       name: http-cloudevent
-    - port: {{ GetPublisherContainerPort }}
+    - port: {{ GetDispatcherContainerPort }}
       protocol: TCP
-      targetPort: {{ GetPublisherContainerPort }}
+      targetPort: {{ GetDispatcherContainerPort }}
       name: grpc-manager
   selector:
     module: dispatcher
-    broker: {{ .ObjectMeta.Name }}
+    broker: {{ .ObjectMeta.Name -}}
 {{range $key,$value := .ObjectMeta.Labels}}
     {{$key}}: {{$value -}}
 {{end}}

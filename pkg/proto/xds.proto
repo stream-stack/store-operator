@@ -27,6 +27,7 @@ message SubscriberPushRequest{
 }
 message Subscribe{
   string name = 1;
+  string uri = 2;
 }
 message SubscriberPushResponse{
 

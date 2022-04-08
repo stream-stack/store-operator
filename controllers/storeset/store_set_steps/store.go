@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/Jille/raftadmin/proto"
 	"github.com/go-logr/logr"
+	v1 "github.com/stream-stack/store-operator/apis/knative/v1"
 	v14 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
+	"github.com/stream-stack/store-operator/pkg/discovery"
 	"github.com/stream-stack/store-operator/pkg/store_client"
 	"google.golang.org/grpc"
 	v13 "k8s.io/api/apps/v1"
@@ -282,7 +284,26 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 				return false, err
 			}
 
-			//TODO:推送新的storeset到dispatcher,publisher
+			//推送新的storeset到dispatcher,publisher
+			list := &v1.BrokerList{}
+			client := ctx.GetClient()
+			err = client.List(ctx.Context, list)
+			if err != nil {
+				return false, err
+			}
+			for _, item := range list.Items {
+				broker := &item
+				if err := discovery.StartAllocatorGroupWithBroker(ctx.Context, ctx.GetClient(), broker); err != nil {
+					return false, err
+				}
+				if err := discovery.DispatcherStoreSetPush(ctx.Context, ctx.GetClient(), broker); err != nil {
+					return false, err
+				}
+				if err := discovery.PublisherStoreSetPush(ctx.Context, client, broker); err != nil {
+					return false, err
+				}
+			}
+
 			return true, nil
 		},
 		SetDefault: func(set base.StepObject) {

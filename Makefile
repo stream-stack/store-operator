@@ -72,8 +72,8 @@ run: manifests generate fmt vet ## Run a controller from your host.
 .PHONY: docker-build
 docker-build: test ## Build docker image with the manager.
 	#docker build -t ${IMG} .
-	#docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8,linux/ppc64le,linux/s390x -t ${IMG} . --push
-	docker buildx build --platform linux/amd64 -t ${IMG} . --push
+	docker buildx build --platform linux/amd64,linux/arm/v7,linux/arm64/v8 -t ${IMG} . --push
+	#docker buildx build --platform linux/amd64 -t ${IMG} . --push
 
 .PHONY: docker-push
 docker-push: ## Push docker image with the manager.

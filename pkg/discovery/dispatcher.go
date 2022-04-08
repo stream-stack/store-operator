@@ -13,21 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func DispatcherStoreSetPush(ctx context.Context, k8sClient client.Client, broker *v1.Broker) error {
-	//var err error
-	//list := &v15.StoreSetList{}
-	//selectorMap, err := v13.LabelSelectorAsMap(broker.Spec.Selector)
-	//if err != nil {
-	//	return err
-	//}
-	//err = k8sClient.List(ctx, list, client.MatchingLabels(selectorMap))
-	//if err != nil {
-	//	return err
-	//}
-	//if len(list.Items) <= 0 {
-	//	return nil
-	//}
-	//storesetData := buildStoreData(list)
+func StartAllocatorGroupWithBroker(ctx context.Context, k8sClient client.Client, broker *v1.Broker) error {
 	//生成sts地址
 	adds := buildDispatcherAddress(broker)
 	b := *broker
@@ -43,7 +29,7 @@ func DispatcherStoreSetPush(ctx context.Context, k8sClient client.Client, broker
 	return <-resultCh
 }
 
-func StartAllocatorGroupWithBroker(ctx context.Context, k8sClient client.Client, broker *v1.Broker) error {
+func DispatcherStoreSetPush(ctx context.Context, k8sClient client.Client, broker *v1.Broker) error {
 	var err error
 	list := &v15.StoreSetList{}
 	selectorMap, err := v13.LabelSelectorAsMap(broker.Spec.Selector)

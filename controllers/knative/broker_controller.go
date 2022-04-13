@@ -79,7 +79,7 @@ func (r *BrokerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 // SetupWithManager sets up the controller with the Manager.
 func (r *BrokerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&knativev1.Broker{}).Owns(&appsv1.StatefulSet{}).Owns(&corev1.Service{}).
+		For(&knativev1.Broker{}).Owns(&appsv1.Deployment{}).Owns(&corev1.Service{}).Owns(&corev1.ServiceAccount{}).
 		Complete(r)
 }
 

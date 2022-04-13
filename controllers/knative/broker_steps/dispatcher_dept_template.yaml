@@ -1,20 +1,19 @@
 apiVersion: apps/v1
-kind: StatefulSet
+kind: Deployment
 metadata:
-  name: {{ GetPublisherStsName .}}
+  name: {{ GetDispatcherDeptName .}}
   namespace: {{ .ObjectMeta.Namespace }}
   labels:
-    module: publisher
+    module: dispatcher
     broker: {{ .ObjectMeta.Name -}}
 {{range $key,$value := .ObjectMeta.Labels}}
     {{$key}}: {{$value -}}
 {{end}}
 spec:
-  serviceName: {{ GetPublisherStsName .}}
-  replicas: {{ .Spec.Publisher.Replicas}}
+  replicas: {{ .Spec.Dispatcher.Replicas}}
   selector:
     matchLabels:
-      module: publisher
+      module: dispatcher
       broker: {{ .ObjectMeta.Name -}}
 {{range $key,$value := .ObjectMeta.Labels}}
       {{$key}}: {{$value -}}
@@ -22,25 +21,23 @@ spec:
   template:
     metadata:
       labels:
-        module: publisher
+        module: dispatcher
         broker: {{ .ObjectMeta.Name -}}
 {{range $key,$value := .ObjectMeta.Labels}}
         {{$key}}: {{$value -}}
 {{end}}
     spec:
+      serviceAccountName: {{ .ObjectMeta.Name }}
       containers:
-        - name: publisher
-          image: {{ .Spec.Publisher.Image }}
+        - name: dispatcher
+          image: {{ .Spec.Dispatcher.Image }}
           ports:
-            - containerPort: {{ GetPublisherContainerPort }}
-              name: grpc-manager
-          env:
-            - name: STREAM_NAME
-              value: "{{ GetStreamName . }}"
+            - containerPort: 80
+              name: http-cloudevent
           livenessProbe:
             httpGet:
               path: /health
-              port: {{ GetPublisherContainerPort }}
+              port: {{ GetDispatcherManagerContainerPort }}
             initialDelaySeconds: 3
             timeoutSeconds: 5
             periodSeconds: 5
@@ -49,14 +46,14 @@ spec:
           readinessProbe:
             httpGet:
               path: /health
-              port: {{ GetPublisherContainerPort }}
+              port: {{ GetDispatcherManagerContainerPort }}
             initialDelaySeconds: 3
             timeoutSeconds: 5
             periodSeconds: 5
             successThreshold: 1
             failureThreshold: 3
-#          command:
-#            - './publisher'
-#          workingDir: '/'
-#          args:
-#            - '--Address='
+          command:
+            - './dispatcher'
+          workingDir: '/'
+          args:
+            - '--STREAM_NAME={{GetStreamName . }} --SELECTOR={{GetSelector . }}'

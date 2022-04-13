@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ GetDispatcherStsName .}}
+  name: {{ GetDispatcherDeptName .}}
   namespace: {{ .ObjectMeta.Namespace }}
 spec:
   ports:
@@ -9,10 +9,6 @@ spec:
       protocol: TCP
       targetPort: 80
       name: http-cloudevent
-    - port: {{ GetDispatcherContainerPort }}
-      protocol: TCP
-      targetPort: {{ GetDispatcherContainerPort }}
-      name: grpc-manager
   selector:
     module: dispatcher
     broker: {{ .ObjectMeta.Name -}}

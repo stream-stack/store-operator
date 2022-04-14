@@ -49,6 +49,8 @@ func (r *BrokerReconciler) GetRecorder() record.EventRecorder {
 	return r.Recorder
 }
 
+//+kubebuilder:rbac:groups="",resources=serviceaccounts,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups="rbac.authorization.k8s.io",resources=clusterrolebindings,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=knative.stream-stack.tanx,resources=brokers,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=knative.stream-stack.tanx,resources=brokers/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=knative.stream-stack.tanx,resources=brokers/finalizers,verbs=update

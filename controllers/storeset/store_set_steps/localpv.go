@@ -82,6 +82,7 @@ func buildStepByIndex(index int32) *base.Step {
 				o.Spec = t.Spec
 				return true, o, nil
 			}
+			c.Status.Status = v13.StoreSetStatusPVCreating
 
 			return false, now, nil
 		},

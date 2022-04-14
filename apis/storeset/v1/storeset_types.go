@@ -35,18 +35,13 @@ type LocalPvSpec struct {
 type StoreStatefulSetSpec struct {
 	Replicas *int32 `json:"replicas,omitempty"`
 	Image    string `json:"image,omitempty"`
-}
-
-type PublisherDeptSpec struct {
-	Replicas *int32 `json:"replicas,omitempty"`
-	Image    string `json:"image,omitempty"`
+	Port     string `json:"port,omitempty"`
 }
 
 // StoreSetSpec defines the desired state of StoreSet
 type StoreSetSpec struct {
-	Volume    LocalPvSpec          `json:"volume,omitempty"`
-	Store     StoreStatefulSetSpec `json:"store,omitempty"`
-	Publisher PublisherDeptSpec    `json:"publisher,omitempty"`
+	Volume LocalPvSpec          `json:"volume,omitempty"`
+	Store  StoreStatefulSetSpec `json:"store,omitempty"`
 }
 
 type LocalPvStatus struct {
@@ -70,10 +65,15 @@ type PublisherDeptStatus struct {
 type StoreSetStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
-	VolumeStatus    LocalPvStatus          `json:"volume"`
-	StoreStatus     StoreStatefulSetStatus `json:"Store"`
-	PublisherStatus PublisherDeptStatus    `json:"publisher"`
+	VolumeStatus LocalPvStatus          `json:"volume"`
+	StoreStatus  StoreStatefulSetStatus `json:"store"`
+	Status       string                 `json:"status"`
 }
+
+const StoreSetStatusReady = `ready`
+const StoreSetStatusPVCreating = `PVCreating`
+const StoreSetStatusStoreSetSvcCreating = `StoreSetSvcCreating`
+const StoreSetStatusStoreSetStsCreating = `StoreSetStsCreating`
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

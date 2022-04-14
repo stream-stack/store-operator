@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"github.com/Jille/raftadmin/proto"
 	"github.com/go-logr/logr"
-	v1 "github.com/stream-stack/store-operator/apis/knative/v1"
 	v14 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
-	"github.com/stream-stack/store-operator/pkg/discovery"
 	"github.com/stream-stack/store-operator/pkg/store_client"
 	"google.golang.org/grpc"
 	v13 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"reflect"
 	"strconv"
@@ -29,6 +28,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 		},
 		Render: func(set base.StepObject) (base.StepObject, error) {
 			c := set.(*v14.StoreSet)
+			storeContainerPort := intstr.Parse(c.Spec.Store.Port)
 			return &v12.Service{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        c.Name,
@@ -41,8 +41,8 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 						{
 							Name:       "grpc-store",
 							Protocol:   v12.ProtocolTCP,
-							Port:       store_client.StoreContainerPort.IntVal,
-							TargetPort: store_client.StoreContainerPort,
+							Port:       storeContainerPort.IntVal,
+							TargetPort: storeContainerPort,
 						},
 					},
 					Selector: c.Labels,
@@ -69,6 +69,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 				o.Spec.Type = t.Spec.Type
 				return true, o, nil
 			}
+			c.Status.Status = v14.StoreSetStatusStoreSetSvcCreating
 			return false, now, nil
 		},
 		Next: func(ctx *base.StepContext) (bool, error) {
@@ -115,6 +116,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 				},
 			}
 			var terminationGracePeriodSeconds int64 = 30
+			storeContainerPort := intstr.Parse(c.Spec.Store.Port)
 			return &v13.StatefulSet{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:        c.Name,
@@ -153,7 +155,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 									Ports: []v12.ContainerPort{
 										{
 											Name:          "grpc-store",
-											ContainerPort: store_client.StoreContainerPort.IntVal,
+											ContainerPort: storeContainerPort.IntVal,
 											Protocol:      v12.ProtocolTCP,
 										},
 									},
@@ -173,7 +175,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 									LivenessProbe: &v12.Probe{
 										ProbeHandler: v12.ProbeHandler{
 											TCPSocket: &v12.TCPSocketAction{
-												Port: store_client.StoreContainerPort,
+												Port: storeContainerPort,
 											},
 										},
 										InitialDelaySeconds:           3,
@@ -186,7 +188,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 									ReadinessProbe: &v12.Probe{
 										ProbeHandler: v12.ProbeHandler{
 											TCPSocket: &v12.TCPSocketAction{
-												Port: store_client.StoreContainerPort,
+												Port: storeContainerPort,
 											},
 										},
 										InitialDelaySeconds:           3,
@@ -256,6 +258,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 				o.Spec = t.Spec
 				return true, o, nil
 			}
+			c.Status.Status = v14.StoreSetStatusStoreSetStsCreating
 
 			return false, now, nil
 		},
@@ -283,26 +286,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			if err != nil {
 				return false, err
 			}
-
-			//推送新的storeset到dispatcher,publisher
-			list := &v1.BrokerList{}
-			client := ctx.GetClient()
-			err = client.List(ctx.Context, list)
-			if err != nil {
-				return false, err
-			}
-			for _, item := range list.Items {
-				broker := &item
-				if err := discovery.StartAllocatorGroupWithBroker(ctx.Context, ctx.GetClient(), broker); err != nil {
-					return false, err
-				}
-				if err := discovery.DispatcherStoreSetPush(ctx.Context, ctx.GetClient(), broker); err != nil {
-					return false, err
-				}
-				if err := discovery.PublisherStoreSetPush(ctx.Context, client, broker); err != nil {
-					return false, err
-				}
-			}
+			c.Status.Status = v14.StoreSetStatusReady
 
 			return true, nil
 		},
@@ -313,6 +297,9 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			}
 			if c.Spec.Store.Replicas == nil {
 				c.Spec.Store.Replicas = &cfg.StoreReplicas
+			}
+			if len(c.Spec.Store.Port) == 0 {
+				c.Spec.Store.Port = store_client.StoreContainerPort.String()
 			}
 
 		},

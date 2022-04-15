@@ -7,10 +7,6 @@
 package proto
 
 import (
-	context "context"
-	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -79,287 +75,6 @@ func (x *Partition) GetStore() *StoreSet {
 	return nil
 }
 
-type AllocatePartitionRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *AllocatePartitionRequest) Reset() {
-	*x = AllocatePartitionRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_xds_proto_msgTypes[1]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AllocatePartitionRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AllocatePartitionRequest) ProtoMessage() {}
-
-func (x *AllocatePartitionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_xds_proto_msgTypes[1]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AllocatePartitionRequest.ProtoReflect.Descriptor instead.
-func (*AllocatePartitionRequest) Descriptor() ([]byte, []int) {
-	return file_xds_proto_rawDescGZIP(), []int{1}
-}
-
-type AllocatePartitionResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	PartitionCount uint64   `protobuf:"varint,1,opt,name=partitionCount,proto3" json:"partitionCount,omitempty"`
-	PrevStoreUri   []string `protobuf:"bytes,2,rep,name=prevStoreUri,proto3" json:"prevStoreUri,omitempty"`
-}
-
-func (x *AllocatePartitionResponse) Reset() {
-	*x = AllocatePartitionResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_xds_proto_msgTypes[2]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *AllocatePartitionResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AllocatePartitionResponse) ProtoMessage() {}
-
-func (x *AllocatePartitionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_xds_proto_msgTypes[2]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AllocatePartitionResponse.ProtoReflect.Descriptor instead.
-func (*AllocatePartitionResponse) Descriptor() ([]byte, []int) {
-	return file_xds_proto_rawDescGZIP(), []int{2}
-}
-
-func (x *AllocatePartitionResponse) GetPartitionCount() uint64 {
-	if x != nil {
-		return x.PartitionCount
-	}
-	return 0
-}
-
-func (x *AllocatePartitionResponse) GetPrevStoreUri() []string {
-	if x != nil {
-		return x.PrevStoreUri
-	}
-	return nil
-}
-
-type SubscriberPushRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Subscribes []*Subscribe `protobuf:"bytes,1,rep,name=subscribes,proto3" json:"subscribes,omitempty"`
-}
-
-func (x *SubscriberPushRequest) Reset() {
-	*x = SubscriberPushRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_xds_proto_msgTypes[3]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *SubscriberPushRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SubscriberPushRequest) ProtoMessage() {}
-
-func (x *SubscriberPushRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_xds_proto_msgTypes[3]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SubscriberPushRequest.ProtoReflect.Descriptor instead.
-func (*SubscriberPushRequest) Descriptor() ([]byte, []int) {
-	return file_xds_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *SubscriberPushRequest) GetSubscribes() []*Subscribe {
-	if x != nil {
-		return x.Subscribes
-	}
-	return nil
-}
-
-type Subscribe struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Uri  string `protobuf:"bytes,2,opt,name=uri,proto3" json:"uri,omitempty"`
-}
-
-func (x *Subscribe) Reset() {
-	*x = Subscribe{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_xds_proto_msgTypes[4]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *Subscribe) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*Subscribe) ProtoMessage() {}
-
-func (x *Subscribe) ProtoReflect() protoreflect.Message {
-	mi := &file_xds_proto_msgTypes[4]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use Subscribe.ProtoReflect.Descriptor instead.
-func (*Subscribe) Descriptor() ([]byte, []int) {
-	return file_xds_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *Subscribe) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *Subscribe) GetUri() string {
-	if x != nil {
-		return x.Uri
-	}
-	return ""
-}
-
-type SubscriberPushResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *SubscriberPushResponse) Reset() {
-	*x = SubscriberPushResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_xds_proto_msgTypes[5]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *SubscriberPushResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*SubscriberPushResponse) ProtoMessage() {}
-
-func (x *SubscriberPushResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_xds_proto_msgTypes[5]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use SubscriberPushResponse.ProtoReflect.Descriptor instead.
-func (*SubscriberPushResponse) Descriptor() ([]byte, []int) {
-	return file_xds_proto_rawDescGZIP(), []int{5}
-}
-
-// 请求信息
-type StoreSetPushRequest struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-
-	Stores []*StoreSet `protobuf:"bytes,1,rep,name=stores,proto3" json:"stores,omitempty"`
-}
-
-func (x *StoreSetPushRequest) Reset() {
-	*x = StoreSetPushRequest{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_xds_proto_msgTypes[6]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *StoreSetPushRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StoreSetPushRequest) ProtoMessage() {}
-
-func (x *StoreSetPushRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_xds_proto_msgTypes[6]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StoreSetPushRequest.ProtoReflect.Descriptor instead.
-func (*StoreSetPushRequest) Descriptor() ([]byte, []int) {
-	return file_xds_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *StoreSetPushRequest) GetStores() []*StoreSet {
-	if x != nil {
-		return x.Stores
-	}
-	return nil
-}
-
 type StoreSet struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -373,7 +88,7 @@ type StoreSet struct {
 func (x *StoreSet) Reset() {
 	*x = StoreSet{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_xds_proto_msgTypes[7]
+		mi := &file_xds_proto_msgTypes[1]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -386,7 +101,7 @@ func (x *StoreSet) String() string {
 func (*StoreSet) ProtoMessage() {}
 
 func (x *StoreSet) ProtoReflect() protoreflect.Message {
-	mi := &file_xds_proto_msgTypes[7]
+	mi := &file_xds_proto_msgTypes[1]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -399,7 +114,7 @@ func (x *StoreSet) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StoreSet.ProtoReflect.Descriptor instead.
 func (*StoreSet) Descriptor() ([]byte, []int) {
-	return file_xds_proto_rawDescGZIP(), []int{7}
+	return file_xds_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *StoreSet) GetName() string {
@@ -423,44 +138,6 @@ func (x *StoreSet) GetUris() []string {
 	return nil
 }
 
-type StoreSetPushResponse struct {
-	state         protoimpl.MessageState
-	sizeCache     protoimpl.SizeCache
-	unknownFields protoimpl.UnknownFields
-}
-
-func (x *StoreSetPushResponse) Reset() {
-	*x = StoreSetPushResponse{}
-	if protoimpl.UnsafeEnabled {
-		mi := &file_xds_proto_msgTypes[8]
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		ms.StoreMessageInfo(mi)
-	}
-}
-
-func (x *StoreSetPushResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*StoreSetPushResponse) ProtoMessage() {}
-
-func (x *StoreSetPushResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_xds_proto_msgTypes[8]
-	if protoimpl.UnsafeEnabled && x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use StoreSetPushResponse.ProtoReflect.Descriptor instead.
-func (*StoreSetPushResponse) Descriptor() ([]byte, []int) {
-	return file_xds_proto_rawDescGZIP(), []int{8}
-}
-
 var File_xds_proto protoreflect.FileDescriptor
 
 var file_xds_proto_rawDesc = []byte{
@@ -469,50 +146,13 @@ var file_xds_proto_rawDesc = []byte{
 	0x6e, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04, 0x52, 0x05, 0x62, 0x65, 0x67, 0x69, 0x6e, 0x12, 0x1f,
 	0x0a, 0x05, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x09, 0x2e,
 	0x53, 0x74, 0x6f, 0x72, 0x65, 0x53, 0x65, 0x74, 0x52, 0x05, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x22,
-	0x1a, 0x0a, 0x18, 0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x74, 0x69,
-	0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x67, 0x0a, 0x19, 0x41,
-	0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e,
-	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x26, 0x0a, 0x0e, 0x70, 0x61, 0x72, 0x74,
-	0x69, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x75, 0x6e, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x04,
-	0x52, 0x0e, 0x70, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x43, 0x6f, 0x75, 0x6e, 0x74,
-	0x12, 0x22, 0x0a, 0x0c, 0x70, 0x72, 0x65, 0x76, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x55, 0x72, 0x69,
-	0x18, 0x02, 0x20, 0x03, 0x28, 0x09, 0x52, 0x0c, 0x70, 0x72, 0x65, 0x76, 0x53, 0x74, 0x6f, 0x72,
-	0x65, 0x55, 0x72, 0x69, 0x22, 0x43, 0x0a, 0x15, 0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x62,
-	0x65, 0x72, 0x50, 0x75, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x2a, 0x0a,
-	0x0a, 0x73, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28,
-	0x0b, 0x32, 0x0a, 0x2e, 0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x52, 0x0a, 0x73,
-	0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x73, 0x22, 0x31, 0x0a, 0x09, 0x53, 0x75, 0x62,
-	0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01,
-	0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12, 0x10, 0x0a, 0x03, 0x75, 0x72,
-	0x69, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x03, 0x75, 0x72, 0x69, 0x22, 0x18, 0x0a, 0x16,
-	0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x72, 0x50, 0x75, 0x73, 0x68, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x38, 0x0a, 0x13, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x53,
-	0x65, 0x74, 0x50, 0x75, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x21, 0x0a,
-	0x06, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x73, 0x18, 0x01, 0x20, 0x03, 0x28, 0x0b, 0x32, 0x09, 0x2e,
-	0x53, 0x74, 0x6f, 0x72, 0x65, 0x53, 0x65, 0x74, 0x52, 0x06, 0x73, 0x74, 0x6f, 0x72, 0x65, 0x73,
-	0x22, 0x50, 0x0a, 0x08, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x53, 0x65, 0x74, 0x12, 0x12, 0x0a, 0x04,
-	0x6e, 0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65,
-	0x12, 0x1c, 0x0a, 0x09, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20,
-	0x01, 0x28, 0x09, 0x52, 0x09, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x12,
-	0x0a, 0x04, 0x75, 0x72, 0x69, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x75, 0x72,
-	0x69, 0x73, 0x22, 0x16, 0x0a, 0x14, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x53, 0x65, 0x74, 0x50, 0x75,
-	0x73, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xe0, 0x01, 0x0a, 0x0a, 0x58,
-	0x64, 0x73, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x3d, 0x0a, 0x0c, 0x53, 0x74, 0x6f,
-	0x72, 0x65, 0x53, 0x65, 0x74, 0x50, 0x75, 0x73, 0x68, 0x12, 0x14, 0x2e, 0x53, 0x74, 0x6f, 0x72,
-	0x65, 0x53, 0x65, 0x74, 0x50, 0x75, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
-	0x15, 0x2e, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x53, 0x65, 0x74, 0x50, 0x75, 0x73, 0x68, 0x52, 0x65,
-	0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x43, 0x0a, 0x0e, 0x53, 0x75, 0x62, 0x73,
-	0x63, 0x72, 0x69, 0x62, 0x65, 0x72, 0x50, 0x75, 0x73, 0x68, 0x12, 0x16, 0x2e, 0x53, 0x75, 0x62,
-	0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x72, 0x50, 0x75, 0x73, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65,
-	0x73, 0x74, 0x1a, 0x17, 0x2e, 0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x72, 0x50,
-	0x75, 0x73, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x4e, 0x0a,
-	0x11, 0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69,
-	0x6f, 0x6e, 0x12, 0x19, 0x2e, 0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72,
-	0x74, 0x69, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a, 0x2e,
-	0x41, 0x6c, 0x6c, 0x6f, 0x63, 0x61, 0x74, 0x65, 0x50, 0x61, 0x72, 0x74, 0x69, 0x74, 0x69, 0x6f,
-	0x6e, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x30, 0x01, 0x42, 0x0a, 0x5a,
-	0x08, 0x2e, 0x2e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x50, 0x0a, 0x08, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x53, 0x65, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x6e,
+	0x61, 0x6d, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x6e, 0x61, 0x6d, 0x65, 0x12,
+	0x1c, 0x0a, 0x09, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x09, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x70, 0x61, 0x63, 0x65, 0x12, 0x12, 0x0a,
+	0x04, 0x75, 0x72, 0x69, 0x73, 0x18, 0x03, 0x20, 0x03, 0x28, 0x09, 0x52, 0x04, 0x75, 0x72, 0x69,
+	0x73, 0x42, 0x0a, 0x5a, 0x08, 0x2e, 0x2e, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x06, 0x70,
+	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -527,33 +167,18 @@ func file_xds_proto_rawDescGZIP() []byte {
 	return file_xds_proto_rawDescData
 }
 
-var file_xds_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_xds_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_xds_proto_goTypes = []interface{}{
-	(*Partition)(nil),                 // 0: Partition
-	(*AllocatePartitionRequest)(nil),  // 1: AllocatePartitionRequest
-	(*AllocatePartitionResponse)(nil), // 2: AllocatePartitionResponse
-	(*SubscriberPushRequest)(nil),     // 3: SubscriberPushRequest
-	(*Subscribe)(nil),                 // 4: Subscribe
-	(*SubscriberPushResponse)(nil),    // 5: SubscriberPushResponse
-	(*StoreSetPushRequest)(nil),       // 6: StoreSetPushRequest
-	(*StoreSet)(nil),                  // 7: StoreSet
-	(*StoreSetPushResponse)(nil),      // 8: StoreSetPushResponse
+	(*Partition)(nil), // 0: Partition
+	(*StoreSet)(nil),  // 1: StoreSet
 }
 var file_xds_proto_depIdxs = []int32{
-	7, // 0: Partition.store:type_name -> StoreSet
-	4, // 1: SubscriberPushRequest.subscribes:type_name -> Subscribe
-	7, // 2: StoreSetPushRequest.stores:type_name -> StoreSet
-	6, // 3: XdsService.StoreSetPush:input_type -> StoreSetPushRequest
-	3, // 4: XdsService.SubscriberPush:input_type -> SubscriberPushRequest
-	1, // 5: XdsService.AllocatePartition:input_type -> AllocatePartitionRequest
-	8, // 6: XdsService.StoreSetPush:output_type -> StoreSetPushResponse
-	5, // 7: XdsService.SubscriberPush:output_type -> SubscriberPushResponse
-	2, // 8: XdsService.AllocatePartition:output_type -> AllocatePartitionResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	1, // 0: Partition.store:type_name -> StoreSet
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_xds_proto_init() }
@@ -575,91 +200,7 @@ func file_xds_proto_init() {
 			}
 		}
 		file_xds_proto_msgTypes[1].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AllocatePartitionRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_xds_proto_msgTypes[2].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*AllocatePartitionResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_xds_proto_msgTypes[3].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SubscriberPushRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_xds_proto_msgTypes[4].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*Subscribe); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_xds_proto_msgTypes[5].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*SubscriberPushResponse); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_xds_proto_msgTypes[6].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StoreSetPushRequest); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_xds_proto_msgTypes[7].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*StoreSet); i {
-			case 0:
-				return &v.state
-			case 1:
-				return &v.sizeCache
-			case 2:
-				return &v.unknownFields
-			default:
-				return nil
-			}
-		}
-		file_xds_proto_msgTypes[8].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*StoreSetPushResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -677,9 +218,9 @@ func file_xds_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_xds_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   2,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   0,
 		},
 		GoTypes:           file_xds_proto_goTypes,
 		DependencyIndexes: file_xds_proto_depIdxs,
@@ -689,184 +230,4 @@ func file_xds_proto_init() {
 	file_xds_proto_rawDesc = nil
 	file_xds_proto_goTypes = nil
 	file_xds_proto_depIdxs = nil
-}
-
-// Reference imports to suppress errors if they are not otherwise used.
-var _ context.Context
-var _ grpc.ClientConnInterface
-
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
-
-// XdsServiceClient is the client API for XdsService service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
-type XdsServiceClient interface {
-	StoreSetPush(ctx context.Context, in *StoreSetPushRequest, opts ...grpc.CallOption) (*StoreSetPushResponse, error)
-	SubscriberPush(ctx context.Context, in *SubscriberPushRequest, opts ...grpc.CallOption) (*SubscriberPushResponse, error)
-	AllocatePartition(ctx context.Context, in *AllocatePartitionRequest, opts ...grpc.CallOption) (XdsService_AllocatePartitionClient, error)
-}
-
-type xdsServiceClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewXdsServiceClient(cc grpc.ClientConnInterface) XdsServiceClient {
-	return &xdsServiceClient{cc}
-}
-
-func (c *xdsServiceClient) StoreSetPush(ctx context.Context, in *StoreSetPushRequest, opts ...grpc.CallOption) (*StoreSetPushResponse, error) {
-	out := new(StoreSetPushResponse)
-	err := c.cc.Invoke(ctx, "/XdsService/StoreSetPush", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *xdsServiceClient) SubscriberPush(ctx context.Context, in *SubscriberPushRequest, opts ...grpc.CallOption) (*SubscriberPushResponse, error) {
-	out := new(SubscriberPushResponse)
-	err := c.cc.Invoke(ctx, "/XdsService/SubscriberPush", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *xdsServiceClient) AllocatePartition(ctx context.Context, in *AllocatePartitionRequest, opts ...grpc.CallOption) (XdsService_AllocatePartitionClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_XdsService_serviceDesc.Streams[0], "/XdsService/AllocatePartition", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &xdsServiceAllocatePartitionClient{stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
-}
-
-type XdsService_AllocatePartitionClient interface {
-	Recv() (*AllocatePartitionResponse, error)
-	grpc.ClientStream
-}
-
-type xdsServiceAllocatePartitionClient struct {
-	grpc.ClientStream
-}
-
-func (x *xdsServiceAllocatePartitionClient) Recv() (*AllocatePartitionResponse, error) {
-	m := new(AllocatePartitionResponse)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
-// XdsServiceServer is the server API for XdsService service.
-type XdsServiceServer interface {
-	StoreSetPush(context.Context, *StoreSetPushRequest) (*StoreSetPushResponse, error)
-	SubscriberPush(context.Context, *SubscriberPushRequest) (*SubscriberPushResponse, error)
-	AllocatePartition(*AllocatePartitionRequest, XdsService_AllocatePartitionServer) error
-}
-
-// UnimplementedXdsServiceServer can be embedded to have forward compatible implementations.
-type UnimplementedXdsServiceServer struct {
-}
-
-func (*UnimplementedXdsServiceServer) StoreSetPush(context.Context, *StoreSetPushRequest) (*StoreSetPushResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StoreSetPush not implemented")
-}
-func (*UnimplementedXdsServiceServer) SubscriberPush(context.Context, *SubscriberPushRequest) (*SubscriberPushResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method SubscriberPush not implemented")
-}
-func (*UnimplementedXdsServiceServer) AllocatePartition(*AllocatePartitionRequest, XdsService_AllocatePartitionServer) error {
-	return status.Errorf(codes.Unimplemented, "method AllocatePartition not implemented")
-}
-
-func RegisterXdsServiceServer(s *grpc.Server, srv XdsServiceServer) {
-	s.RegisterService(&_XdsService_serviceDesc, srv)
-}
-
-func _XdsService_StoreSetPush_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StoreSetPushRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(XdsServiceServer).StoreSetPush(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/XdsService/StoreSetPush",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(XdsServiceServer).StoreSetPush(ctx, req.(*StoreSetPushRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _XdsService_SubscriberPush_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SubscriberPushRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(XdsServiceServer).SubscriberPush(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/XdsService/SubscriberPush",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(XdsServiceServer).SubscriberPush(ctx, req.(*SubscriberPushRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _XdsService_AllocatePartition_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(AllocatePartitionRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
-	}
-	return srv.(XdsServiceServer).AllocatePartition(m, &xdsServiceAllocatePartitionServer{stream})
-}
-
-type XdsService_AllocatePartitionServer interface {
-	Send(*AllocatePartitionResponse) error
-	grpc.ServerStream
-}
-
-type xdsServiceAllocatePartitionServer struct {
-	grpc.ServerStream
-}
-
-func (x *xdsServiceAllocatePartitionServer) Send(m *AllocatePartitionResponse) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-var _XdsService_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "XdsService",
-	HandlerType: (*XdsServiceServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "StoreSetPush",
-			Handler:    _XdsService_StoreSetPush_Handler,
-		},
-		{
-			MethodName: "SubscriberPush",
-			Handler:    _XdsService_SubscriberPush_Handler,
-		},
-	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "AllocatePartition",
-			Handler:       _XdsService_AllocatePartition_Handler,
-			ServerStreams: true,
-		},
-	},
-	Metadata: "xds.proto",
 }

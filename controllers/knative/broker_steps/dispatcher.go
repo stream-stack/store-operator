@@ -127,7 +127,12 @@ func NewDispatcher(config *InitConfig) *base.Step {
 			return false, now, nil
 		},
 		Next: func(ctx *base.StepContext) (bool, error) {
-			return true, nil
+			broker := ctx.StepObject.(*v14.Broker)
+			if broker.Status.Dispatcher.WorkloadStatus.ReadyReplicas == broker.Spec.Dispatcher.Replicas {
+				return true, nil
+			}
+
+			return false, nil
 		},
 	}
 	return &base.Step{

@@ -45,6 +45,7 @@ type PublisherSpec struct {
 
 // BrokerSpec defines the desired state of Broker
 type BrokerSpec struct {
+	Uuid       string                `json:"uuid,omitempty"`
 	Selector   *metav1.LabelSelector `json:"selector,omitempty"`
 	Partition  BrokerPartition       `json:"partition,omitempty"`
 	Dispatcher DispatcherSpec        `json:"dispatcher,omitempty"`
@@ -67,6 +68,7 @@ type ServiceStatus struct {
 
 // BrokerStatus defines the observed state of Broker
 type BrokerStatus struct {
+	Uuid       string           `json:"uuid,omitempty"`
 	Dispatcher DispatcherStatus `json:"dispatcher,omitempty"`
 	Publisher  PublisherStatus  `json:"publisher,omitempty"`
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/stream-stack/store-operator/pkg/discovery"
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"reflect"
 	"text/template"
@@ -83,6 +84,9 @@ func NewDispatcher(config *InitConfig) *base.Step {
 			}
 			if c.Spec.Dispatcher.Replicas <= 0 {
 				c.Spec.Dispatcher.Replicas = config.DispatcherReplicas
+			}
+			if len(c.Spec.Uuid) == 0 {
+				c.Spec.Uuid = string(uuid.NewUUID())
 			}
 			//TODO:partition default value set
 		},

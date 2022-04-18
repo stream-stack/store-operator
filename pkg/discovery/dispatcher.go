@@ -67,7 +67,7 @@ import (
 const systemBrokerPartition = "_system_broker_partition"
 
 func GetStreamName(b *v1.Broker) string {
-	return fmt.Sprintf("%s-%s", b.Namespace, b.Name)
+	return fmt.Sprintf("%s-%s-%s", b.Namespace, b.Name, b.Status.Uuid)
 }
 func GetSelector(b *v1.Broker) string {
 	marshal, err := json.Marshal(b.Spec.Selector)

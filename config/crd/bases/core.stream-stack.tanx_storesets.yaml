@@ -35,17 +35,11 @@ spec:
           spec:
             description: StoreSetSpec defines the desired state of StoreSet
             properties:
-              publisher:
-                properties:
-                  image:
-                    type: string
-                  replicas:
-                    format: int32
-                    type: integer
-                type: object
               store:
                 properties:
                   image:
+                    type: string
+                  port:
                     type: string
                   replicas:
                     format: int32

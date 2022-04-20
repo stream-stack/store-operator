@@ -7,8 +7,14 @@ message Partition{
   StoreSet store = 2;
 }
 
+message Subscribe{
+  string name = 1;
+  string uri = 2;
+}
+
 message StoreSet{
   string name = 1;
   string Namespace = 2;
   repeated string uris = 3;
 }
+

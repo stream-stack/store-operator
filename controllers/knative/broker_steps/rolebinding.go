@@ -78,6 +78,8 @@ func NewRoleBinding(config *InitConfig) *base.Step {
 			return d, nil
 		},
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
+			c := owner.(*v14.Broker)
+			c.Status.Uuid = c.Spec.Uuid
 			o := now.(*v13.ClusterRoleBinding)
 
 			t := target.(*v13.ClusterRoleBinding)

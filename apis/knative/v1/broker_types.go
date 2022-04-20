@@ -17,20 +17,53 @@ limitations under the License.
 package v1
 
 import (
+	"fmt"
+	"github.com/stream-stack/store-operator/pkg/proto"
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"math/rand"
 )
 
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 
+type BrokerPartitionCounter struct {
+	Count uint64 `json:"count"`
+}
+
+func (c *BrokerPartitionCounter) AllocatePartition(statistics *proto.Statistics, sets []*proto.StoreSet) (*proto.StoreSet, uint64, error) {
+	if statistics.PartitionCount == 0 {
+		intn := rand.Intn(len(sets))
+		set := sets[intn]
+
+		return set, 0, nil
+	}
+	intn := rand.Intn(len(sets))
+	set := sets[intn]
+
+	//如果当前eventId为10,count为2,PartitionCount为3
+	//则下一个分片begin 10+2,PartitionCount为4
+	//
+	if statistics.MaxEvent > statistics.PartitionCount*c.Count {
+		return set, statistics.MaxEvent + c.Count, nil
+	}
+
+	return nil, 0, nil
+}
+
 type BrokerPartition struct {
 	//按照 数量，数据量，时间 三种策略进行分区
-	//Counter  BrokerPartitionCounter  `json:"counter,omitempty"`
+	Counter *BrokerPartitionCounter `json:"counter,omitempty"`
 	//DataSize BrokerPartitionDataSize `json:"dataSize,omitempty"`
 	//Timer    BrokerPartitionTimer    `json:"timer,omitempty"`
-	Size uint64 `json:"size,omitempty"`
+}
+
+func (in *BrokerPartition) AllocatePartition(statistics *proto.Statistics, sets []*proto.StoreSet) (*proto.StoreSet, uint64, error) {
+	if in.Counter != nil {
+		return in.Counter.AllocatePartition(statistics, sets)
+	}
+	return nil, 0, fmt.Errorf("no partition strategy")
 }
 
 type DispatcherSpec struct {

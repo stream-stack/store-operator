@@ -1,73 +1,199 @@
 package discovery
 
-//
-//import (
-//	"context"
-//	"fmt"
-//	"github.com/sirupsen/logrus"
-//	v1 "github.com/stream-stack/store-operator/apis/knative/v1"
-//	"github.com/stream-stack/store-operator/pkg/proto"
-//	"time"
-//)
-//
-//type PartitionAllocator struct {
-//	ctx           context.Context
-//	cancelFunc    context.CancelFunc
-//	serviceClient proto.XdsServiceClient
-//	addr          string
-//	group         *AllocatorGroupAdd
-//	uri           string
-//}
-//
-//func (a *PartitionAllocator) Stop() {
-//	a.cancelFunc()
-//}
-//
-//func (a *PartitionAllocator) Start(ctx context.Context) {
-//	a.ctx, a.cancelFunc = context.WithCancel(ctx)
-//	defer a.Stop()
-//	for {
-//		select {
-//		case <-a.ctx.Done():
-//			return
-//		default:
-//			partition, err := a.serviceClient.AllocatePartition(a.ctx, &proto.AllocatePartitionRequest{})
-//			if err != nil {
-//				logrus.Errorf("AllocatePartition error:%v , sleep 5 second for retry", err)
-//				time.Sleep(time.Second * 5)
-//			}
-//			for {
-//				select {
-//				case <-a.ctx.Done():
-//					return
-//				default:
-//					recv, err := partition.Recv()
-//					if err != nil {
-//						logrus.Errorf("AllocatePartition recv error:%v", err)
-//						continue
-//					}
-//					a.group.AllocateCh <- recv
-//				}
-//			}
-//		}
-//	}
-//}
-//
-//var Allocators = make(map[string]*PartitionAllocator)
-//
-//func getAllocator(broker v1.Broker) *PartitionAllocator {
-//	name := getBrokerAllocatorName(broker)
-//	return Allocators[name]
-//}
-//
-//func getBrokerAllocatorName(broker v1.Broker) string {
-//	return fmt.Sprintf("%s/%s", broker.Namespace, broker.Name)
-//}
-//
-//func NewPartitionAllocator(group *AllocatorGroupAdd, uri string, serviceClient proto.XdsServiceClient) *PartitionAllocator {
-//	return &PartitionAllocator{
-//		group:         group,
-//		serviceClient: serviceClient,
-//		uri:           uri,
-//	}
-//}
+import (
+	"context"
+	"fmt"
+	pp "github.com/golang/protobuf/proto"
+	"github.com/sirupsen/logrus"
+	v12 "github.com/stream-stack/store-operator/apis/knative/v1"
+	v13 "github.com/stream-stack/store-operator/apis/storeset/v1"
+	"github.com/stream-stack/store-operator/pkg/proto"
+	"github.com/stream-stack/store-operator/pkg/store_client"
+	v1 "k8s.io/api/core/v1"
+	v14 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"math/rand"
+	"net/http"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	"time"
+)
+
+var AllocateRequestCh = make(chan v12.Broker, 1)
+
+func StartPartitionAllocator(ctx context.Context, client client.Client) {
+	ticker := time.NewTicker(time.Minute * 5)
+	defer ticker.Stop()
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				logrus.Info("Start partition allocator")
+				//list broker
+				brokerList := &v12.BrokerList{}
+				if err := client.List(ctx, brokerList); err != nil {
+					logrus.Errorf("list broker error: %v", err)
+					continue
+				}
+				//loop broker list
+				for _, item := range brokerList.Items {
+					handlerRequest(ctx, client, item)
+				}
+			case request := <-AllocateRequestCh:
+				handlerRequest(ctx, client, request)
+			}
+		}
+	}()
+}
+
+const statisticsUriFormat = `http://%s:%d/statistics`
+const defaultPort = 8080
+const defaultTimeOut = time.Second * 5
+const systemBrokerPartition = "_system_broker_partition"
+
+func handlerRequest(ctx context.Context, c client.Client, broker v12.Broker) {
+	pod, err := getMatchPod(ctx, c, broker)
+	if err != nil {
+		return
+	}
+	statistics, err := getStatistics(pod)
+	if err != nil {
+		return
+	}
+	//立即分配第一个分片
+	storeSets, err := getStoreSetData(ctx, c, broker)
+	if err != nil {
+		return
+	}
+	if len(storeSets) == 0 {
+		return
+	}
+	//分配新的分片
+	partition, begin, err := broker.Spec.Partition.AllocatePartition(statistics, storeSets)
+	if err != nil {
+		logrus.Errorf("allocate partition for broker %s/%s error: %v", broker.Namespace, broker.Name, err)
+		return
+	}
+	if partition == nil {
+		logrus.Debugf("no partition need to allocate for broker %s/%s", broker.Namespace, broker.Name)
+		return
+	}
+	writePartition(ctx, partition, broker, statistics.PartitionCount+1, begin)
+}
+
+func writePartition(ctx context.Context, set *proto.StoreSet, broker v12.Broker, i uint64, begin uint64) {
+	bytes, err := pp.Marshal(&proto.Partition{
+		Begin: begin,
+		Store: set,
+	})
+	if err != nil {
+		logrus.Errorf("protobuf marshal partition error,%v", err)
+		return
+	}
+	apply, err := store_client.Apply(ctx, set.Uris, &proto.ApplyRequest{
+		StreamName: systemBrokerPartition,
+		StreamId:   GetStreamName(&broker),
+		EventId:    i,
+		Data:       bytes,
+	})
+	if err != nil {
+		logrus.Errorf("write partition for broker %s/%s error,%v", broker.Namespace, broker.Name, err)
+		return
+	}
+	logrus.Debugf("write partition for broker %s/%s success,result:%+v", broker.Namespace, broker.Name, apply)
+	return
+}
+
+func getStoreSetData(ctx context.Context, c client.Client, broker v12.Broker) ([]*proto.StoreSet, error) {
+	list := &v13.StoreSetList{}
+	selectorMap, err := v14.LabelSelectorAsMap(broker.Spec.Selector)
+	if err != nil {
+		logrus.Errorf("LabelSelectorAsMap error,%v", err)
+		return nil, err
+	}
+	err = c.List(ctx, list, client.MatchingLabels(selectorMap))
+	if err != nil {
+		logrus.Errorf("list storeset error,%v", err)
+		return nil, err
+	}
+	if len(list.Items) <= 0 {
+		return make([]*proto.StoreSet, 0), nil
+	}
+
+	return buildStoreData(list), nil
+}
+
+func buildStoreUri(item v13.StoreSet) []string {
+	replicas := *item.Spec.Store.Replicas
+	addrs := make([]string, replicas)
+	var i int32
+	for ; i < replicas; i++ {
+		//TODO:重构名称的生成,应该和模板统一,使用template的自定义函数
+		addrs[i] = fmt.Sprintf(`%s-%d.%s.%s:%s`, item.Name, i, item.Status.StoreStatus.ServiceName, item.Namespace, item.Spec.Store.Port)
+	}
+	return addrs
+}
+
+func buildStoreData(list *v13.StoreSetList) []*proto.StoreSet {
+	var data = make([]*proto.StoreSet, len(list.Items))
+	for _, item := range list.Items {
+		data = append(data, &proto.StoreSet{
+			Name:      item.Name,
+			Namespace: item.Namespace,
+			Uris:      buildStoreUri(item),
+		})
+	}
+	return data
+}
+
+func getStatistics(pod v1.Pod) (*proto.Statistics, error) {
+	//发送请求
+	url := fmt.Sprintf(statisticsUriFormat, pod.Status.PodIP, defaultPort)
+	logrus.Infof("get statistics to %s", url)
+	httpClient := &http.Client{Timeout: defaultTimeOut}
+	resp, err := httpClient.Get(url)
+	if err != nil {
+		logrus.Errorf("Failed to get statistics from %s: %v", url, err)
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		logrus.Errorf("Failed to get statistics from %s statusCode: %v", url, resp.StatusCode)
+		return nil, err
+	}
+	//parse body to Statistics
+	statistics := &proto.Statistics{}
+	err = proto.ParseStatistics(resp.Body, statistics)
+	if err != nil {
+		logrus.Errorf("Failed to parse statistics from %s: %v", url, err)
+		return nil, err
+	}
+	return statistics, nil
+}
+
+func getMatchPod(ctx context.Context, c client.Client, request v12.Broker) (v1.Pod, error) {
+	podList := &v1.PodList{}
+	request.Labels["module"] = "dispatcher"
+	request.Labels["broker"] = request.Name
+	err := c.List(ctx, podList, client.InNamespace(request.Namespace), client.MatchingLabels(request.Labels))
+	if err != nil {
+		logrus.Errorf("Failed to list pods: %v", err)
+		return v1.Pod{}, err
+	}
+	//filter pods with start time greater than current time minus 10 second
+	add := time.Now().Add(-10 * time.Second)
+	var pods []v1.Pod
+	for _, pod := range podList.Items {
+		if pod.Status.StartTime.After(add) {
+			pods = append(pods, pod)
+		}
+	}
+	//random pick one
+	if len(pods) == 0 {
+		logrus.Errorf("No pod found for broker %s", request.Name)
+		return v1.Pod{}, err
+	}
+	//随机选择一个
+	pod := pods[rand.Intn(len(pods))]
+	return pod, nil
+}

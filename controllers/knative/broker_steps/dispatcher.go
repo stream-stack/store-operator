@@ -74,7 +74,7 @@ func NewDispatcher(config *InitConfig) *base.Step {
 			if broker.Status.Dispatcher.WorkloadStatus.ReadyReplicas != broker.Spec.Dispatcher.Replicas {
 				return false, nil
 			}
-
+			discovery.AllocateRequestCh <- *broker
 			return true, nil
 		},
 		SetDefault: func(t base.StepObject) {

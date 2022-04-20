@@ -19,6 +19,7 @@ package main
 import (
 	"flag"
 	"github.com/sirupsen/logrus"
+	"github.com/stream-stack/store-operator/pkg/discovery"
 	"os"
 
 	v1 "github.com/stream-stack/store-operator/apis/storeset/v1"
@@ -134,6 +135,7 @@ func main() {
 		os.Exit(1)
 	}
 	handler := ctrl.SetupSignalHandler()
+	discovery.StartPartitionAllocator(handler, mgr.GetClient())
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(handler); err != nil {

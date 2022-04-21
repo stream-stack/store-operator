@@ -45,12 +45,15 @@ spec:
                 type: object
               partition:
                 properties:
-                  size:
-                    description: 按照 数量，数据量，时间 三种策略进行分区 Counter  BrokerPartitionCounter  `json:"counter,omitempty"`
-                      DataSize BrokerPartitionDataSize `json:"dataSize,omitempty"`
-                      Timer    BrokerPartitionTimer    `json:"timer,omitempty"`
-                    format: int64
-                    type: integer
+                  counter:
+                    description: 按照 数量，数据量，时间 三种策略进行分区
+                    properties:
+                      count:
+                        format: int64
+                        type: integer
+                    required:
+                    - count
+                    type: object
                 type: object
               publisher:
                 properties:
@@ -107,6 +110,8 @@ spec:
                       are ANDed.
                     type: object
                 type: object
+              uuid:
+                type: string
             type: object
           status:
             description: BrokerStatus defines the observed state of Broker
@@ -277,6 +282,8 @@ spec:
                         type: integer
                     type: object
                 type: object
+              uuid:
+                type: string
             type: object
         type: object
     served: true

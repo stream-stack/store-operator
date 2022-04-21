@@ -5,7 +5,7 @@ import (
 	_ "github.com/Jille/grpc-multi-resolver"
 	grpc_retry "github.com/grpc-ecosystem/go-grpc-middleware/retry"
 	"github.com/sirupsen/logrus"
-	protocol "github.com/stream-stack/store-operator/pkg/proto"
+	"github.com/stream-stack/common/protocol/store"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/health"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -15,7 +15,7 @@ import (
 
 var StoreContainerPort = intstr.FromInt(50051)
 
-func Apply(ctx context.Context, urls []string, request *protocol.ApplyRequest) (*protocol.ApplyResponse, error) {
+func Apply(ctx context.Context, urls []string, request *store.ApplyRequest) (*store.ApplyResponse, error) {
 	targetAddress := storeAddressFormat(urls)
 	serviceConfig := `{"healthCheckConfig": {"serviceName": "store"}, "loadBalancingConfig": [ { "round_robin": {} } ]}`
 	retryOpts := []grpc_retry.CallOption{
@@ -31,7 +31,7 @@ func Apply(ctx context.Context, urls []string, request *protocol.ApplyRequest) (
 		return nil, err
 	}
 	defer conn.Close()
-	eventCli := protocol.NewEventServiceClient(conn)
+	eventCli := store.NewEventServiceClient(conn)
 	return eventCli.Apply(ctx, request)
 }
 

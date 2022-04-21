@@ -18,7 +18,8 @@ package v1
 
 import (
 	"fmt"
-	"github.com/stream-stack/store-operator/pkg/proto"
+	"github.com/stream-stack/common/protocol/dispatcher"
+	"github.com/stream-stack/common/protocol/operator"
 	v1 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -32,7 +33,7 @@ type BrokerPartitionCounter struct {
 	Count uint64 `json:"count"`
 }
 
-func (c *BrokerPartitionCounter) AllocatePartition(statistics *proto.Statistics, sets []*proto.StoreSet) (*proto.StoreSet, uint64, error) {
+func (c *BrokerPartitionCounter) AllocatePartition(statistics *dispatcher.Statistics, sets []*operator.StoreSet) (*operator.StoreSet, uint64, error) {
 	if statistics.PartitionCount == 0 {
 		intn := rand.Intn(len(sets))
 		set := sets[intn]
@@ -55,11 +56,12 @@ func (c *BrokerPartitionCounter) AllocatePartition(statistics *proto.Statistics,
 type BrokerPartition struct {
 	//按照 数量，数据量，时间 三种策略进行分区
 	Counter *BrokerPartitionCounter `json:"counter,omitempty"`
+	//TODO:实现其他策略
 	//DataSize BrokerPartitionDataSize `json:"dataSize,omitempty"`
 	//Timer    BrokerPartitionTimer    `json:"timer,omitempty"`
 }
 
-func (in *BrokerPartition) AllocatePartition(statistics *proto.Statistics, sets []*proto.StoreSet) (*proto.StoreSet, uint64, error) {
+func (in *BrokerPartition) AllocatePartition(statistics *dispatcher.Statistics, sets []*operator.StoreSet) (*operator.StoreSet, uint64, error) {
 	if in.Counter != nil {
 		return in.Counter.AllocatePartition(statistics, sets)
 	}

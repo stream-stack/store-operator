@@ -23,7 +23,7 @@ var roleBindingYamlTemplate *template.Template
 
 func init() {
 	var err error
-	yamlTemplate, err = template.New("rolebinding").Funcs(map[string]interface{}{
+	roleBindingYamlTemplate, err = template.New("rolebinding").Funcs(map[string]interface{}{
 		//"GetBrokerServiceAccountName": discovery.GetBrokerServiceAccountName,
 		//"GetClusterRoleName":          discovery.GetClusterRoleName,
 	}).ParseFS(roleBindingTemplateFs, "*")
@@ -55,7 +55,7 @@ func NewRoleBinding(config *InitConfig) *base.Step {
 			return d, nil
 		},
 		SetStatus: func(owner base.StepObject, target, now base.StepObject) (needUpdate bool, updateObject base.StepObject, err error) {
-			return true, nil, nil
+			return false, nil, nil
 		},
 	}
 	binding := &base.Step{
@@ -66,7 +66,7 @@ func NewRoleBinding(config *InitConfig) *base.Step {
 		Render: func(t base.StepObject) (base.StepObject, error) {
 			c := t.(*v14.Broker)
 			buffer := &bytes.Buffer{}
-			if err := yamlTemplate.ExecuteTemplate(buffer, "broker_clusterrolebinding_template.yaml", c); err != nil {
+			if err := roleBindingYamlTemplate.ExecuteTemplate(buffer, "broker_clusterrolebinding_template.yaml", c); err != nil {
 				return nil, err
 			}
 
@@ -99,7 +99,7 @@ func NewRoleBinding(config *InitConfig) *base.Step {
 		Del: func(ctx context.Context, t base.StepObject, client client.Client) error {
 			c := t.(*v14.Broker)
 			buffer := &bytes.Buffer{}
-			if err := yamlTemplate.ExecuteTemplate(buffer, "broker_clusterrolebinding_template.yaml", c); err != nil {
+			if err := roleBindingYamlTemplate.ExecuteTemplate(buffer, "broker_clusterrolebinding_template.yaml", c); err != nil {
 				return err
 			}
 

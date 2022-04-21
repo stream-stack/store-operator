@@ -20,6 +20,3 @@ spec:
   store:
     replicas: 3
     image: "ccr.ccs.tencentyun.com/stream/store:latest"
-  publisher:
-    replicas: 1
-    image: "ccr.ccs.tencentyun.com/stream/publisher:latest"

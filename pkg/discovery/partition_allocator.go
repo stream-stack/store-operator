@@ -175,6 +175,9 @@ func getStatistics(pod v1.Pod) (*dispatcher.Statistics, error) {
 
 func getMatchPod(ctx context.Context, c client.Client, request v12.Broker) (v1.Pod, error) {
 	podList := &v1.PodList{}
+	if request.Labels == nil {
+		request.Labels = make(map[string]string)
+	}
 	request.Labels["module"] = "dispatcher"
 	request.Labels["broker"] = request.Name
 	err := c.List(ctx, podList, client.InNamespace(request.Namespace), client.MatchingLabels(request.Labels))

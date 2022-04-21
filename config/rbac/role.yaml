@@ -113,6 +113,14 @@ rules:
 - apiGroups:
   - ""
   resources:
+  - pod
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ""
+  resources:
   - services
   verbs:
   - create

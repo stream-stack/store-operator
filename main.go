@@ -19,14 +19,12 @@ package main
 import (
 	"flag"
 	"github.com/sirupsen/logrus"
+	v1 "github.com/stream-stack/store-operator/apis/storeset/v1"
+	_ "github.com/stream-stack/store-operator/controllers/knative/broker_steps"
+	"github.com/stream-stack/store-operator/controllers/storeset"
+	_ "github.com/stream-stack/store-operator/controllers/storeset/store_set_steps"
 	"github.com/stream-stack/store-operator/pkg/discovery"
 	"os"
-
-	v1 "github.com/stream-stack/store-operator/apis/storeset/v1"
-	"github.com/stream-stack/store-operator/controllers/storeset"
-
-	_ "github.com/stream-stack/store-operator/controllers/knative/broker_steps"
-	_ "github.com/stream-stack/store-operator/controllers/storeset/store_set_steps"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -134,11 +132,11 @@ func main() {
 		setupLog.Error(err, "unable to set up ready check")
 		os.Exit(1)
 	}
-	handler := ctrl.SetupSignalHandler()
-	discovery.StartPartitionAllocator(handler, mgr.GetClient())
+	ctx := ctrl.SetupSignalHandler()
+	go discovery.StartPartitionAllocator(ctx, mgr.GetClient())
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(handler); err != nil {
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}

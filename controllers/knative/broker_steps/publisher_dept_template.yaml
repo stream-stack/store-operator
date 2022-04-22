@@ -61,4 +61,4 @@ spec:
             - './publisher'
           workingDir: '/'
           args:
-            - '--STREAM_NAME={{GetStreamName . }} --SELECTOR={{GetSelector . }}'
+            - '--STREAM_NAME="{{GetStreamName . }}" --SELECTOR="{{GetSelector . }}"'

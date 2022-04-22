@@ -113,7 +113,7 @@ rules:
 - apiGroups:
   - ""
   resources:
-  - pod
+  - pods
   verbs:
   - get
   - list

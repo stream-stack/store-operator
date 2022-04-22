@@ -36,8 +36,5 @@ func Apply(ctx context.Context, urls []string, request *store.ApplyRequest) (*st
 }
 
 func storeAddressFormat(urls []string) string {
-	for i, url := range urls {
-		urls[i] = url + ":" + StoreContainerPort.String()
-	}
 	return "multi:///" + strings.Join(urls, ",")
 }

@@ -13,6 +13,9 @@ func GetStreamName(b *v1.Broker) string {
 	return fmt.Sprintf("%s-%s-%s", b.Namespace, b.Name, b.Status.Uuid)
 }
 func GetSelector(b *v1.Broker) string {
+	if b.Spec.Selector.Size() == 0 {
+		return ""
+	}
 	marshal, err := json.Marshal(b.Spec.Selector)
 	if err != nil {
 		logrus.Warnf("marshal selector error:%v", err)

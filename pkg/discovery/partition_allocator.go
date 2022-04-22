@@ -22,30 +22,29 @@ import (
 var AllocateRequestCh = make(chan v12.Broker, 1)
 
 func StartPartitionAllocator(ctx context.Context, client client.Client) {
-	ticker := time.NewTicker(time.Minute * 5)
+	ticker := time.NewTicker(time.Minute)
 	defer ticker.Stop()
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-ticker.C:
-				logrus.Info("Start partition allocator")
-				//list broker
-				brokerList := &v12.BrokerList{}
-				if err := client.List(ctx, brokerList); err != nil {
-					logrus.Errorf("list broker error: %v", err)
-					continue
-				}
-				//loop broker list
-				for _, item := range brokerList.Items {
-					handlerRequest(ctx, client, item)
-				}
-			case request := <-AllocateRequestCh:
-				handlerRequest(ctx, client, request)
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ticker.C:
+			logrus.Infof("Start partition allocator with ticker")
+			//list broker
+			brokerList := &v12.BrokerList{}
+			if err := client.List(ctx, brokerList); err != nil {
+				logrus.Errorf("list broker error: %v", err)
+				continue
 			}
+			//loop broker list
+			for _, item := range brokerList.Items {
+				handlerRequest(ctx, client, item)
+			}
+		case request := <-AllocateRequestCh:
+			logrus.Debugf("receive partition allocate with broker: %s/%s", request.Namespace, request.Name)
+			handlerRequest(ctx, client, request)
 		}
-	}()
+	}
 }
 
 const statisticsUriFormat = `http://%s:%d/statistics`
@@ -92,7 +91,10 @@ func writePartition(ctx context.Context, set *operator.StoreSet, broker v12.Brok
 		logrus.Errorf("protobuf marshal partition error,%v", err)
 		return
 	}
-	apply, err := store_client.Apply(ctx, set.Uris, &store.ApplyRequest{
+	//ctx timeout is 5s
+	applyCtx, cancel := context.WithTimeout(ctx, defaultTimeOut)
+	defer cancel()
+	apply, err := store_client.Apply(applyCtx, set.Uris, &store.ApplyRequest{
 		StreamName: systemBrokerPartition,
 		StreamId:   GetStreamName(&broker),
 		EventId:    i,
@@ -130,7 +132,6 @@ func buildStoreUri(item v13.StoreSet) []string {
 	addrs := make([]string, replicas)
 	var i int32
 	for ; i < replicas; i++ {
-		//TODO:重构名称的生成,应该和模板统一,使用template的自定义函数
 		addrs[i] = fmt.Sprintf(`%s-%d.%s.%s:%s`, item.Name, i, item.Status.StoreStatus.ServiceName, item.Namespace, item.Spec.Store.Port)
 	}
 	return addrs
@@ -185,18 +186,18 @@ func getMatchPod(ctx context.Context, c client.Client, request v12.Broker) (v1.P
 		logrus.Errorf("Failed to list pods: %v", err)
 		return v1.Pod{}, err
 	}
-	//filter pods with start time greater than current time minus 10 second
-	add := time.Now().Add(-10 * time.Second)
+	//filter pods with status running
 	var pods []v1.Pod
 	for _, pod := range podList.Items {
-		if pod.Status.StartTime.After(add) {
-			pods = append(pods, pod)
+		if pod.Status.Phase != v1.PodRunning {
+			continue
 		}
+		pods = append(pods, pod)
 	}
 	//random pick one
 	if len(pods) == 0 {
-		logrus.Errorf("No pod found for broker %s", request.Name)
-		return v1.Pod{}, err
+		logrus.Errorf("No pod found for broker %s/%s,labels: %+v", request.Namespace, request.Name, request.Labels)
+		return v1.Pod{}, fmt.Errorf("no pod found for broker %s/%s,labels: %+v", request.Namespace, request.Name, request.Labels)
 	}
 	//随机选择一个
 	pod := pods[rand.Intn(len(pods))]

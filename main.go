@@ -133,7 +133,7 @@ func main() {
 		os.Exit(1)
 	}
 	ctx := ctrl.SetupSignalHandler()
-	go discovery.StartPartitionAllocator(ctx, mgr.GetClient())
+	go discovery.StartPartitionAllocator(ctx, mgr)
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctx); err != nil {

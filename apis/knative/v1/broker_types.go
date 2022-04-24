@@ -38,7 +38,7 @@ func (c *BrokerPartitionCounter) AllocatePartition(statistics *dispatcher.Statis
 		intn := rand.Intn(len(sets))
 		set := sets[intn]
 
-		return set, 1, nil
+		return set, 0, nil
 	}
 	intn := rand.Intn(len(sets))
 	set := sets[intn]
@@ -50,7 +50,7 @@ func (c *BrokerPartitionCounter) AllocatePartition(statistics *dispatcher.Statis
 		return set, statistics.MaxEvent + c.Count, nil
 	}
 
-	return nil, 1, nil
+	return nil, 0, nil
 }
 
 type BrokerPartition struct {

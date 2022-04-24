@@ -16,33 +16,40 @@ import (
 	"math/rand"
 	"net/http"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/manager"
 	"time"
 )
 
 var AllocateRequestCh = make(chan v12.Broker, 1)
 
-func StartPartitionAllocator(ctx context.Context, client client.Client) {
-	ticker := time.NewTicker(time.Minute)
+func StartPartitionAllocator(ctx context.Context, manager manager.Manager) {
+	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-ticker.C:
-			logrus.Infof("Start partition allocator with ticker")
-			//list broker
-			brokerList := &v12.BrokerList{}
-			if err := client.List(ctx, brokerList); err != nil {
-				logrus.Errorf("list broker error: %v", err)
-				continue
+		case <-manager.Elected():
+			sourceCli := manager.GetClient()
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				logrus.Infof("Start partition allocator with ticker")
+				//list broker
+				brokerList := &v12.BrokerList{}
+				if err := sourceCli.List(ctx, brokerList); err != nil {
+					logrus.Errorf("list broker error: %v", err)
+					continue
+				}
+				//loop broker list
+				for _, item := range brokerList.Items {
+					handlerRequest(ctx, sourceCli, item)
+				}
+			case request := <-AllocateRequestCh:
+				logrus.Debugf("receive partition allocate with broker: %s/%s", request.Namespace, request.Name)
+				handlerRequest(ctx, sourceCli, request)
 			}
-			//loop broker list
-			for _, item := range brokerList.Items {
-				handlerRequest(ctx, client, item)
-			}
-		case request := <-AllocateRequestCh:
-			logrus.Debugf("receive partition allocate with broker: %s/%s", request.Namespace, request.Name)
-			handlerRequest(ctx, client, request)
 		}
 	}
 }

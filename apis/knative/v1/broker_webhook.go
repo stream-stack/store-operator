@@ -38,7 +38,7 @@ func (r *Broker) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-knative-stream-stack-tanx-v1-broker,mutating=true,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=brokers,verbs=create;update;delete,versions=v1,name=mbroker.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-knative-stream-stack-tanx-v1-broker,mutating=true,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=brokers,verbs=create;update,versions=v1,name=mbroker.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Broker{}
 
@@ -51,7 +51,7 @@ func (r *Broker) Default() {
 	}
 }
 
-//+kubebuilder:webhook:path=/validate-knative-stream-stack-tanx-v1-broker,mutating=false,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=brokers,verbs=create;update;delete,versions=v1,name=vbroker.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-knative-stream-stack-tanx-v1-broker,mutating=false,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=brokers,verbs=create;update,versions=v1,name=vbroker.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Broker{}
 

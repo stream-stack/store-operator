@@ -32,7 +32,7 @@ func (r *Subscription) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-knative-stream-stack-tanx-v1-subscription,mutating=true,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=subscriptions,verbs=create;update;delete,versions=v1,name=msubscription.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/mutate-knative-stream-stack-tanx-v1-subscription,mutating=true,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=subscriptions,verbs=create;update,versions=v1,name=msubscription.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Subscription{}
 
@@ -43,7 +43,7 @@ func (r *Subscription) Default() {
 	// TODO(user): fill in your defaulting logic.
 }
 
-//+kubebuilder:webhook:path=/validate-knative-stream-stack-tanx-v1-subscription,mutating=false,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=subscriptions,verbs=create;update;delete,versions=v1,name=vsubscription.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-knative-stream-stack-tanx-v1-subscription,mutating=false,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=subscriptions,verbs=create;update,versions=v1,name=vsubscription.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &Subscription{}
 

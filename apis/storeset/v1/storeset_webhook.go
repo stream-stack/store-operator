@@ -38,7 +38,8 @@ func (r *StoreSet) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/mutate-core-stream-stack-tanx-v1-storeset,mutating=true,failurePolicy=fail,sideEffects=None,groups=core.stream-stack.tanx,resources=storesets,verbs=create;update;delete,versions=v1,name=mstoreset.kb.io,admissionReviewVersions=v1
+//webhook 不支持删除,issue https://github.com/kubernetes-sigs/controller-runtime/issues/1278
+//+kubebuilder:webhook:path=/mutate-core-stream-stack-tanx-v1-storeset,mutating=true,failurePolicy=fail,sideEffects=None,groups=core.stream-stack.tanx,resources=storesets,verbs=create;update,versions=v1,name=mstoreset.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &StoreSet{}
 
@@ -51,7 +52,7 @@ func (r *StoreSet) Default() {
 	}
 }
 
-//+kubebuilder:webhook:path=/validate-core-stream-stack-tanx-v1-storeset,mutating=false,failurePolicy=fail,sideEffects=None,groups=core.stream-stack.tanx,resources=storesets,verbs=create;update;delete,versions=v1,name=vstoreset.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-core-stream-stack-tanx-v1-storeset,mutating=false,failurePolicy=fail,sideEffects=None,groups=core.stream-stack.tanx,resources=storesets,verbs=create;update,versions=v1,name=vstoreset.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &StoreSet{}
 

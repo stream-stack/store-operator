@@ -11,7 +11,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.17.0
 	github.com/sirupsen/logrus v1.8.1
-	github.com/stream-stack/common v0.0.0-20220421070712-2526d2a799aa
+	github.com/stream-stack/common v0.0.0-20220425094351-f70adc721e64
 	google.golang.org/grpc v1.44.0
 	k8s.io/api v0.23.5
 	k8s.io/apimachinery v0.23.5

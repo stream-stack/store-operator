@@ -23,6 +23,7 @@ import (
 var AllocateRequestCh = make(chan v12.Broker, 1)
 
 func StartPartitionAllocator(ctx context.Context, manager manager.Manager) {
+	sourceCli := manager.GetClient()
 	ticker := time.NewTicker(time.Minute * 5)
 	defer ticker.Stop()
 	for {
@@ -30,7 +31,6 @@ func StartPartitionAllocator(ctx context.Context, manager manager.Manager) {
 		case <-ctx.Done():
 			return
 		case <-manager.Elected():
-			sourceCli := manager.GetClient()
 			select {
 			case <-ctx.Done():
 				return

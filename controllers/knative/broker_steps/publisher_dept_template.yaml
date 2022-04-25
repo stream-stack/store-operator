@@ -63,3 +63,4 @@ spec:
           args:
             - '--STREAM_NAME={{GetStreamName . }}'
             - '--SELECTOR={{GetSelector . }}'
+            - '--BROKER={{ .ObjectMeta.Name -}}'

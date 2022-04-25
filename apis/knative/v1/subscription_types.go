@@ -25,14 +25,16 @@ import (
 
 type SubscriberDelivery struct {
 	//TODO:定义发送消息的方式
-	// +optional
+	MaxRequestDuration *metav1.Duration `json:"maxRequestDuration,omitempty"`
+	MaxRetries         *int             `json:"maxRetries,omitempty"`
+	AckDuration        *metav1.Duration `json:"ackDuration,omitempty"`
+
 	//DeadLetterPolicy *DeadLetterPolicy `json:"deadLetterPolicy,omitempty"`
 	// +optional
 	//RetryPolicy *RetryPolicy `json:"retryPolicy,omitempty"`
 	// +optional
 	//BackoffPolicy *BackoffPolicy `json:"backoffPolicy,omitempty"`
 }
-
 type SubscriberUri struct {
 	Uri      string `json:"uri,omitempty"`
 	Protocol string `json:"protocol,omitempty"`

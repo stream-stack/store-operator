@@ -38,6 +38,14 @@ spec:
               broker:
                 type: string
               delivery:
+                properties:
+                  ackDuration:
+                    type: string
+                  maxRequestDuration:
+                    description: TODO:定义发送消息的方式
+                    type: string
+                  maxRetries:
+                    type: integer
                 type: object
               filter:
                 type: object

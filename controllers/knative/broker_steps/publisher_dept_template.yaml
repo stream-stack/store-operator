@@ -27,6 +27,7 @@ spec:
         {{$key}}: {{$value -}}
 {{end}}
     spec:
+      hostname: {{.ObjectMeta.Name}}-publisher
       serviceAccountName: {{ .ObjectMeta.Name }}
       containers:
         - name: publisher

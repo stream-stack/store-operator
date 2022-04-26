@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM tangxusc/golang:1.17 as builder
+FROM tangxusc/golang:1.18.1 as builder
 
 WORKDIR /workspace
 # Copy the Go Modules manifests

@@ -24,6 +24,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+	"strings"
 	"time"
 )
 
@@ -75,14 +76,26 @@ var _ webhook.Validator = &Subscription{}
 // ValidateCreate implements webhook.Validator so a webhook will be registered for the type
 func (r *Subscription) ValidateCreate() error {
 	subscriptionlog.Info("validate create", "name", r.Name)
-	var allErrs field.ErrorList
+	var allErrs = make(field.ErrorList, 0)
 	if len(r.Spec.Broker) == 0 {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec.broker"), r.Spec.Broker, "broker is required"))
 	}
 	if r.Spec.Subscriber.Uri == nil && r.Spec.Subscriber.Service == nil && r.Spec.Subscriber.Pod == nil {
 		allErrs = append(allErrs, field.Invalid(field.NewPath("spec.subscriber"), r.Spec.Subscriber, "subscriber is required"))
 	}
-
+	if r.Spec.Subscriber.Service != nil {
+		if len(r.Spec.Subscriber.Service.Path) != 0 && !strings.HasPrefix(r.Spec.Subscriber.Service.Path, "/") {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec.subscriber.service.path"), r.Spec.Subscriber.Service.Path, "path must start with /"))
+		}
+	}
+	if r.Spec.Subscriber.Uri != nil {
+		if len(r.Spec.Subscriber.Uri.Uri) != 0 && strings.HasPrefix(r.Spec.Subscriber.Uri.Uri, "http") {
+			allErrs = append(allErrs, field.Invalid(field.NewPath("spec.subscriber.uri.uri"), r.Spec.Subscriber.Uri.Uri, "uri must not start with http(s)"))
+		}
+	}
+	if len(allErrs) == 0 {
+		return nil
+	}
 	return errors.NewInvalid(r.TypeMeta.GroupVersionKind().GroupKind(), r.Name, allErrs)
 }
 
@@ -90,7 +103,7 @@ func (r *Subscription) ValidateCreate() error {
 func (r *Subscription) ValidateUpdate(old runtime.Object) error {
 	subscriptionlog.Info("validate update", "name", r.Name)
 
-	var allErrs field.ErrorList
+	var allErrs = make(field.ErrorList, 0)
 	allErrs = append(allErrs, field.Invalid(field.NewPath("spec"), r.Spec, "spec is immutable"))
 
 	return errors.NewInvalid(r.TypeMeta.GroupVersionKind().GroupKind(), r.Name, allErrs)

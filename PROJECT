@@ -1,3 +1,4 @@
+componentConfig: true
 domain: stream-stack.tanx
 layout:
 - go.kubebuilder.io/v3
@@ -44,4 +45,12 @@ resources:
     defaulting: true
     validation: true
     webhookVersion: v1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: stream-stack.tanx
+  group: config
+  kind: StreamControllerConfig
+  path: github.com/stream-stack/store-operator/apis/config/v1
+  version: v1
 version: "3"

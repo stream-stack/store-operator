@@ -1,0 +1,20 @@
+# permissions for end users to view streamcontrollerconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: streamcontrollerconfig-viewer-role
+rules:
+- apiGroups:
+  - config.stream-stack.tanx
+  resources:
+  - streamcontrollerconfigs
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - config.stream-stack.tanx
+  resources:
+  - streamcontrollerconfigs/status
+  verbs:
+  - get

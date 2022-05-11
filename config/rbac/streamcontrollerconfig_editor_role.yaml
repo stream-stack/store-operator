@@ -1,0 +1,24 @@
+# permissions for end users to edit streamcontrollerconfigs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: streamcontrollerconfig-editor-role
+rules:
+- apiGroups:
+  - config.stream-stack.tanx
+  resources:
+  - streamcontrollerconfigs
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - config.stream-stack.tanx
+  resources:
+  - streamcontrollerconfigs/status
+  verbs:
+  - get

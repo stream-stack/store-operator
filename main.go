@@ -18,13 +18,15 @@ package main
 
 import (
 	"flag"
+	"os"
+
 	"github.com/sirupsen/logrus"
+
 	v1 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	_ "github.com/stream-stack/store-operator/controllers/knative/broker_steps"
 	"github.com/stream-stack/store-operator/controllers/storeset"
 	_ "github.com/stream-stack/store-operator/controllers/storeset/store_set_steps"
 	"github.com/stream-stack/store-operator/pkg/discovery"
-	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -37,6 +39,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	configv1 "github.com/stream-stack/store-operator/apis/config/v1"
 	knativev1 "github.com/stream-stack/store-operator/apis/knative/v1"
 	knativecontrollers "github.com/stream-stack/store-operator/controllers/knative"
 	//+kubebuilder:scaffold:imports
@@ -52,35 +55,39 @@ func init() {
 
 	utilruntime.Must(v1.AddToScheme(scheme))
 	utilruntime.Must(knativev1.AddToScheme(scheme))
+	utilruntime.Must(configv1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
-	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
-	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
-		"Enable leader election for controller manager. "+
-			"Enabling this will ensure there is only one active controller manager.")
+	logrus.SetLevel(logrus.TraceLevel)
+
+	var configFile string
+	flag.StringVar(&configFile, "config", "",
+		"The controller will load its initial configuration from this file. "+
+			"Omit this flag to use the default configuration values. "+
+			"Command-line flags override configuration from this file.")
 	opts := zap.Options{
 		Development: true,
 	}
+	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
 
-	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
-	logrus.SetLevel(logrus.TraceLevel)
+	var err error
+	config := configv1.StreamControllerConfig{}
+	options := ctrl.Options{Scheme: scheme}
+	if configFile != "" {
+		options, err = options.AndFrom(ctrl.ConfigFile().AtPath(configFile).OfKind(&config))
+		if err != nil {
+			setupLog.Error(err, "unable to load the config file")
+			os.Exit(1)
+		}
+	}
 
-	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
-		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
-		HealthProbeBindAddress: probeAddr,
-		LeaderElection:         enableLeaderElection,
-		LeaderElectionID:       "b653d154.stream-stack.tanx",
-	})
+	logrus.Debugf("config: %+v \n", config)
+	logrus.Debugf("options: %+v \n", options)
+	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), options)
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)

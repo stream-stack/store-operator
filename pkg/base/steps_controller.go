@@ -111,6 +111,14 @@ func (c *StepContext) reconcile(steps []*Step, oldObject runtime.Object) (ctrl.R
 	}
 	if len(c.StepObject.GetFinalizers()) == 0 {
 		c.StepObject.SetFinalizers([]string{FinalizerName})
+		c.Logger.Info("update crd spec.finalizers...")
+		if err := c.GetClient().Update(c.Context, c.StepObject); err != nil {
+			c.Logger.Info("update crd spec.finalizers error", "error", err)
+			return ctrl.Result{
+				Requeue:      true,
+				RequeueAfter: retryDuration,
+			}, err
+		}
 	}
 	if !c.deepEqualFunc(c.StepObject, oldObject) {
 		c.Logger.Info("update crd status")

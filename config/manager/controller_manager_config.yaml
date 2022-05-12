@@ -11,3 +11,30 @@ webhook:
 leaderElection:
   leaderElect: true
   resourceName: b653d154.stream-stack.tanx
+# 自定义配置
+workflow:
+  finalizerName: finalizer.stream-stack.tanx
+  retryDuration: 1s
+store:
+  image: 'ccr.ccs.tencentyun.com/stream/store:latest'
+  replicas: 3
+  port: '50051'
+  volumePath: '/data'
+  topologyKey: 'kubernetes.io/hostname'
+  grpcTimeOut: 5s
+broker:
+  dispatcher:
+    image: 'ccr.ccs.tencentyun.com/stream/dispatcher:latest'
+    replicas: 2
+    metricsUriFormat: 'http://%s:%s/statistics'
+    metricsPort: '8080'
+    timeout: 5s
+    brokerSystemPartitionName: '_system_broker_partition'
+  publisher:
+    image: 'ccr.ccs.tencentyun.com/stream/publisher:latest'
+    replicas: 1
+    port: '8080'
+subscription:
+  maxRetries: 3
+  maxRequestDuration: 5s
+  ackDuration: 5s

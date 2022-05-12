@@ -8,12 +8,9 @@ import (
 	"github.com/stream-stack/common/protocol/store"
 	"google.golang.org/grpc"
 	_ "google.golang.org/grpc/health"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"strings"
 	"time"
 )
-
-var StoreContainerPort = intstr.FromInt(50051)
 
 func Apply(ctx context.Context, urls []string, request *store.ApplyRequest) (*store.ApplyResponse, error) {
 	targetAddress := storeAddressFormat(urls)

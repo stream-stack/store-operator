@@ -606,6 +606,49 @@ spec:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
+          broker:
+            properties:
+              dispatcher:
+                properties:
+                  brokerSystemPartitionName:
+                    type: string
+                  image:
+                    type: string
+                  metricsPort:
+                    type: string
+                  metricsUriFormat:
+                    type: string
+                  replicas:
+                    format: int32
+                    type: integer
+                  timeout:
+                    type: string
+                required:
+                - brokerSystemPartitionName
+                - image
+                - metricsPort
+                - metricsUriFormat
+                - replicas
+                - timeout
+                type: object
+              publisher:
+                properties:
+                  image:
+                    type: string
+                  port:
+                    type: string
+                  replicas:
+                    format: int32
+                    type: integer
+                required:
+                - image
+                - port
+                - replicas
+                type: object
+            required:
+            - dispatcher
+            - publisher
+            type: object
           cacheNamespace:
             description: "CacheNamespace if specified restricts the manager's cache to watch objects in the desired namespace Defaults to all namespaces \n Note: If a namespace is specified, controllers can still Watch for a cluster-scoped resource (e.g Node).  For namespaced resources the cache will only hold objects from the desired namespace."
             type: string
@@ -683,6 +726,42 @@ spec:
                 description: BindAddress is the TCP address that the controller should bind to for serving prometheus metrics. It can be set to "0" to disable the metrics serving.
                 type: string
             type: object
+          store:
+            properties:
+              grpcTimeOut:
+                type: string
+              image:
+                type: string
+              port:
+                type: string
+              replicas:
+                format: int32
+                type: integer
+              topologyKey:
+                type: string
+              volumePath:
+                type: string
+            required:
+            - grpcTimeOut
+            - image
+            - port
+            - replicas
+            - topologyKey
+            - volumePath
+            type: object
+          subscription:
+            properties:
+              ackDuration:
+                type: string
+              maxRequestDuration:
+                type: string
+              maxRetries:
+                type: integer
+            required:
+            - ackDuration
+            - maxRequestDuration
+            - maxRetries
+            type: object
           syncPeriod:
             description: SyncPeriod determines the minimum frequency at which watched resources are reconciled. A lower period will correct entropy more quickly, but reduce responsiveness to change if there are many watched resources. Change this value only if you know what you are doing. Defaults to 10 hours if unset. there will a 10 percent jitter between the SyncPeriod of all controllers so that all controllers will not send list requests simultaneously.
             type: string
@@ -699,6 +778,21 @@ spec:
                 description: Port is the port that the webhook server serves at. It is used to set webhook.Server.Port.
                 type: integer
             type: object
+          workflow:
+            properties:
+              finalizerName:
+                type: string
+              retryDuration:
+                type: string
+            required:
+            - finalizerName
+            - retryDuration
+            type: object
+        required:
+        - broker
+        - store
+        - subscription
+        - workflow
         type: object
     served: true
     storage: true
@@ -1193,7 +1287,7 @@ data:
     metadata:
       name: streamcontrollerconfig-sample
     health:
-      healthProbeBindAddress: 0.0.0.0:8081
+      healthProbeBindAddress: :8081
     metrics:
       bindAddress: 127.0.0.1:8080
     webhook:
@@ -1201,6 +1295,33 @@ data:
     leaderElection:
       leaderElect: true
       resourceName: b653d154.stream-stack.tanx
+    # 自定义配置
+    workflow:
+      finalizerName: finalizer.stream-stack.tanx
+      retryDuration: 1s
+    store:
+      image: 'ccr.ccs.tencentyun.com/stream/store:latest'
+      replicas: 3
+      port: '50051'
+      volumePath: '/data'
+      topologyKey: 'kubernetes.io/hostname'
+      grpcTimeOut: 5s
+    broker:
+      dispatcher:
+        image: 'ccr.ccs.tencentyun.com/stream/dispatcher:latest'
+        replicas: 2
+        metricsUriFormat: 'http://%s:%s/statistics'
+        metricsPort: '8080'
+        timeout: 5s
+        brokerSystemPartitionName: '_system_broker_partition'
+      publisher:
+        image: 'ccr.ccs.tencentyun.com/stream/publisher:latest'
+        replicas: 1
+        port: '8080'
+    subscription:
+      maxRetries: 3
+      maxRequestDuration: 5s
+      ackDuration: 5s
 kind: ConfigMap
 metadata:
   name: store-operator-manager-config

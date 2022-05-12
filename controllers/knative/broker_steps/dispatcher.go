@@ -1,10 +1,11 @@
-package store_set_steps
+package broker_steps
 
 import (
 	"bytes"
 	"embed"
 	_ "embed"
 	"fmt"
+	configv1 "github.com/stream-stack/store-operator/apis/config/v1"
 	v14 "github.com/stream-stack/store-operator/apis/knative/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	"github.com/stream-stack/store-operator/pkg/discovery"
@@ -34,7 +35,7 @@ func init() {
 	}
 }
 
-func NewDispatcher(config *InitConfig) *base.Step {
+func NewDispatcher(cfg configv1.StreamControllerConfig) *base.Step {
 	dept := &base.Step{
 		Name: fmt.Sprintf(`dispatcher-dept`),
 		GetObj: func() base.StepObject {
@@ -80,10 +81,10 @@ func NewDispatcher(config *InitConfig) *base.Step {
 		SetDefault: func(t base.StepObject) {
 			c := t.(*v14.Broker)
 			if len(c.Spec.Dispatcher.Image) == 0 {
-				c.Spec.Dispatcher.Image = config.DispatcherImage
+				c.Spec.Dispatcher.Image = cfg.Broker.Dispatcher.Image
 			}
 			if c.Spec.Dispatcher.Replicas <= 0 {
-				c.Spec.Dispatcher.Replicas = config.DispatcherReplicas
+				c.Spec.Dispatcher.Replicas = cfg.Broker.Dispatcher.Replicas
 			}
 			if len(c.Spec.Uuid) == 0 {
 				c.Spec.Uuid = string(uuid.NewUUID())

@@ -9,8 +9,6 @@ func GetPublisherName(b *v1.Broker) string {
 	return fmt.Sprintf(`%s-publisher`, b.Name)
 }
 
-const PublisherContainerPort = `8080`
-
 func GetPublisherManagerContainerPort() string {
 	return PublisherContainerPort
 }

@@ -17,6 +17,7 @@ limitations under the License.
 package v1
 
 import (
+	configv1 "github.com/stream-stack/store-operator/apis/config/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -40,6 +41,12 @@ func (r *Subscription) SetupWebhookWithManager(mgr ctrl.Manager) error {
 //+kubebuilder:webhook:path=/mutate-knative-stream-stack-tanx-v1-subscription,mutating=true,failurePolicy=fail,sideEffects=None,groups=knative.stream-stack.tanx,resources=subscriptions,verbs=create;update,versions=v1,name=msubscription.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Defaulter = &Subscription{}
+
+func DefaultConfigInit(config configv1.StreamControllerConfig) {
+	DefaultMaxRetries = int(config.Subscription.MaxRetries)
+	DefaultMaxRequestDuration = &config.Subscription.MaxRequestDuration
+	DefaultAckDuration = &config.Subscription.AckDuration
+}
 
 var DefaultMaxRetries = 3
 var DefaultMaxRequestDuration = &metav1.Duration{Duration: 5 * time.Second}

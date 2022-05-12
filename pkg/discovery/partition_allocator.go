@@ -54,11 +54,6 @@ func StartPartitionAllocator(ctx context.Context, manager manager.Manager) {
 	}
 }
 
-const statisticsUriFormat = `http://%s:%d/statistics`
-const defaultPort = 8080
-const defaultTimeOut = time.Second * 5
-const systemBrokerPartition = "_system_broker_partition"
-
 func handlerRequest(ctx context.Context, c client.Client, broker v12.Broker) {
 	pod, err := getMatchPod(ctx, c, broker)
 	if err != nil {
@@ -158,7 +153,7 @@ func buildStoreData(list *v13.StoreSetList) []*operator.StoreSet {
 
 func getStatistics(pod v1.Pod) (*dispatcher.Statistics, error) {
 	//发送请求
-	url := fmt.Sprintf(statisticsUriFormat, pod.Status.PodIP, defaultPort)
+	url := fmt.Sprintf(statisticsUriFormat, pod.Status.PodIP, DispatcherManagerContainerPort)
 	logrus.Infof("get statistics to %s", url)
 	httpClient := &http.Client{Timeout: defaultTimeOut}
 	resp, err := httpClient.Get(url)

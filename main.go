@@ -18,14 +18,15 @@ package main
 
 import (
 	"flag"
+	"github.com/stream-stack/store-operator/controllers/storeset/store_set_steps"
+	"github.com/stream-stack/store-operator/pkg/base"
 	"os"
 
 	"github.com/sirupsen/logrus"
 
 	v1 "github.com/stream-stack/store-operator/apis/storeset/v1"
-	_ "github.com/stream-stack/store-operator/controllers/knative/broker_steps"
+	"github.com/stream-stack/store-operator/controllers/knative/broker_steps"
 	"github.com/stream-stack/store-operator/controllers/storeset"
-	_ "github.com/stream-stack/store-operator/controllers/storeset/store_set_steps"
 	"github.com/stream-stack/store-operator/pkg/discovery"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -84,6 +85,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	configInit(config)
 
 	logrus.Debugf("config: %+v \n", config)
 	logrus.Debugf("options: %+v \n", options)
@@ -147,4 +149,12 @@ func main() {
 		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
+}
+
+func configInit(config configv1.StreamControllerConfig) {
+	base.DefaultConfigInit(config)
+	knativev1.DefaultConfigInit(config)
+	store_set_steps.Register(config)
+	broker_steps.Register(config)
+	discovery.DefaultConfigInit(config)
 }

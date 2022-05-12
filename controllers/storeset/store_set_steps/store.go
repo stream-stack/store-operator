@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"github.com/Jille/raftadmin/proto"
 	"github.com/go-logr/logr"
+	configv1 "github.com/stream-stack/store-operator/apis/config/v1"
 	v14 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
-	"github.com/stream-stack/store-operator/pkg/store_client"
 	"google.golang.org/grpc"
 	v13 "k8s.io/api/apps/v1"
 	v12 "k8s.io/api/core/v1"
@@ -17,10 +17,9 @@ import (
 	"k8s.io/apimachinery/pkg/util/validation/field"
 	"reflect"
 	"strconv"
-	"time"
 )
 
-func NewStoreSteps(cfg *InitConfig) *base.Step {
+func NewStoreSteps(cfg configv1.StreamControllerConfig) *base.Step {
 	var service = &base.Step{
 		Name: "storeService",
 		GetObj: func() base.StepObject {
@@ -79,7 +78,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			c := set.(*v14.StoreSet)
 			if c.Spec.Volume.LocalVolumeSource == nil {
 				c.Spec.Volume.LocalVolumeSource = &v12.LocalVolumeSource{
-					Path: DefaultVolumePath,
+					Path: cfg.Store.VolumePath,
 				}
 			}
 		},
@@ -222,7 +221,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 														},
 													},
 												},
-												TopologyKey: topologyKeyHostname,
+												TopologyKey: cfg.Store.TopologyKey,
 											},
 										},
 									},
@@ -269,7 +268,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 			if c.Status.StoreStatus.Workload.ReadyReplicas != replicas {
 				return false, nil
 			}
-			infos, err := getNodeInfos(ctx.Logger, c, replicas)
+			infos, err := getNodeInfos(ctx.Logger, c, replicas, cfg.Store)
 			if err != nil {
 				return false, err
 			}
@@ -282,7 +281,7 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 				return false, fmt.Errorf("当前leader数量为0,请检查pod是否正常")
 			}
 			ctx.Logger.Info("获取到leader,开始检查其余节点是否加入leader", "address", infos[0].addr)
-			err = joinLeader(ctx.Logger, leader, infos)
+			err = joinLeader(ctx.Logger, leader, infos, cfg.Store.GrpcTimeOut)
 			if err != nil {
 				return false, err
 			}
@@ -293,13 +292,13 @@ func NewStoreSteps(cfg *InitConfig) *base.Step {
 		SetDefault: func(set base.StepObject) {
 			c := set.(*v14.StoreSet)
 			if c.Spec.Store.Image == "" {
-				c.Spec.Store.Image = cfg.StoreImage
+				c.Spec.Store.Image = cfg.Store.Image
 			}
 			if c.Spec.Store.Replicas == nil {
-				c.Spec.Store.Replicas = &cfg.StoreReplicas
+				c.Spec.Store.Replicas = &cfg.Store.Replicas
 			}
 			if len(c.Spec.Store.Port) == 0 {
-				c.Spec.Store.Port = store_client.StoreContainerPort.String()
+				c.Spec.Store.Port = cfg.Store.Port
 			}
 
 		},
@@ -339,8 +338,8 @@ func closeConn(infos []*nodeInfo) {
 	}
 }
 
-func joinLeader(logger logr.Logger, leader *nodeInfo, infos []*nodeInfo) error {
-	timeout, cancelFunc := context.WithTimeout(context.TODO(), defaultGrpcTimeOut)
+func joinLeader(logger logr.Logger, leader *nodeInfo, infos []*nodeInfo, t metav1.Duration) error {
+	timeout, cancelFunc := context.WithTimeout(context.TODO(), t.Duration)
 	defer cancelFunc()
 	configuration, err := leader.client.GetConfiguration(timeout, &proto.GetConfigurationRequest{})
 	if err != nil {
@@ -389,15 +388,15 @@ func getMaxAppliedIndexLeader(infos []*nodeInfo) *nodeInfo {
 	return result
 }
 
-func getNodeInfos(logger logr.Logger, c *v14.StoreSet, replicas int32) ([]*nodeInfo, error) {
+func getNodeInfos(logger logr.Logger, c *v14.StoreSet, replicas int32, cfg configv1.StoreDefault) ([]*nodeInfo, error) {
 	var i int32
 	nodes := make([]*nodeInfo, 0)
 	for ; i < replicas; i++ {
 		hostname := fmt.Sprintf(`%s-%d`, c.Status.StoreStatus.WorkloadName, i)
-		address := fmt.Sprintf(`%s.%s.%s.svc:%d`, hostname, c.Status.StoreStatus.ServiceName, c.Namespace, store_client.StoreContainerPort.IntVal)
+		address := fmt.Sprintf(`%s.%s.%s.svc:%s`, hostname, c.Status.StoreStatus.ServiceName, c.Namespace, cfg.Port)
 
 		logger.Info("try connect statefulset pod", "address", address)
-		timeout, cancelFunc := context.WithTimeout(context.TODO(), defaultGrpcTimeOut)
+		timeout, cancelFunc := context.WithTimeout(context.TODO(), cfg.GrpcTimeOut.Duration)
 		defer cancelFunc()
 		conn, err := grpc.DialContext(timeout, address, grpc.WithInsecure())
 		if err != nil {
@@ -424,9 +423,6 @@ func getNodeInfos(logger logr.Logger, c *v14.StoreSet, replicas int32) ([]*nodeI
 	}
 	return nodes, nil
 }
-
-const topologyKeyHostname = "kubernetes.io/hostname"
-const defaultGrpcTimeOut = time.Second * 5
 
 type nodeInfo struct {
 	addr         string

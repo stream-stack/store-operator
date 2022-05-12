@@ -1,9 +1,10 @@
-package store_set_steps
+package broker_steps
 
 import (
 	"bytes"
 	"embed"
 	"fmt"
+	configv1 "github.com/stream-stack/store-operator/apis/config/v1"
 	v14 "github.com/stream-stack/store-operator/apis/knative/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	"github.com/stream-stack/store-operator/pkg/discovery"
@@ -31,7 +32,7 @@ func init() {
 	}
 }
 
-func NewPublisher(config *InitConfig) *base.Step {
+func NewPublisher(cfg configv1.StreamControllerConfig) *base.Step {
 	sts := &base.Step{
 		Name: fmt.Sprintf(`publisher-dept`),
 		GetObj: func() base.StepObject {
@@ -77,10 +78,10 @@ func NewPublisher(config *InitConfig) *base.Step {
 		SetDefault: func(t base.StepObject) {
 			c := t.(*v14.Broker)
 			if len(c.Spec.Publisher.Image) == 0 {
-				c.Spec.Publisher.Image = config.PublisherImage
+				c.Spec.Publisher.Image = cfg.Broker.Publisher.Image
 			}
 			if c.Spec.Publisher.Replicas <= 0 {
-				c.Spec.Publisher.Replicas = config.PublisherReplicas
+				c.Spec.Publisher.Replicas = cfg.Broker.Publisher.Replicas
 			}
 			//TODO:partition default value set
 		},

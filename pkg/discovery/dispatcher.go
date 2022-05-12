@@ -27,8 +27,6 @@ func GetDispatcherDeptName(b *v1.Broker) string {
 	return fmt.Sprintf(`%s-dispatcher`, b.Name)
 }
 
-const DispatcherManagerContainerPort = `8080`
-
 func GetDispatcherManagerContainerPort() string {
 	return DispatcherManagerContainerPort
 }

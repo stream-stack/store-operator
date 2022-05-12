@@ -1,17 +1,12 @@
-package store_set_steps
+package broker_steps
 
 import (
+	configv1 "github.com/stream-stack/store-operator/apis/config/v1"
 	v1 "github.com/stream-stack/store-operator/apis/knative/v1"
 	"github.com/stream-stack/store-operator/controllers/knative"
 )
 
-func init() {
-	config := &InitConfig{
-		DispatcherImage:    "ccr.ccs.tencentyun.com/stream/dispatcher:latest",
-		DispatcherReplicas: 2,
-		PublisherImage:     "ccr.ccs.tencentyun.com/stream/publisher:latest",
-		PublisherReplicas:  2,
-	}
+func Register(config configv1.StreamControllerConfig) {
 	binding := NewRoleBinding(config)
 	knative.Steps = append(knative.Steps, binding)
 	v1.BrokerValidators = append(v1.BrokerValidators, binding)
@@ -26,11 +21,4 @@ func init() {
 	knative.Steps = append(knative.Steps, publisher)
 	v1.BrokerValidators = append(v1.BrokerValidators, publisher)
 	v1.BrokerDefaulters = append(v1.BrokerDefaulters, publisher)
-}
-
-type InitConfig struct {
-	DispatcherImage    string
-	DispatcherReplicas int32
-	PublisherImage     string
-	PublisherReplicas  int32
 }

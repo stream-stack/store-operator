@@ -1,4 +1,4 @@
-package store_set_steps
+package broker_steps
 
 import (
 	"bytes"
@@ -6,6 +6,7 @@ import (
 	"embed"
 	_ "embed"
 	"fmt"
+	configv1 "github.com/stream-stack/store-operator/apis/config/v1"
 	v14 "github.com/stream-stack/store-operator/apis/knative/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	v12 "k8s.io/api/core/v1"
@@ -32,7 +33,7 @@ func init() {
 	}
 }
 
-func NewRoleBinding(config *InitConfig) *base.Step {
+func NewRoleBinding(cfg configv1.StreamControllerConfig) *base.Step {
 	account := &base.Step{
 		Name: fmt.Sprintf(`rolebinding-serviceaccount`),
 		GetObj: func() base.StepObject {

@@ -2,6 +2,7 @@ package store_set_steps
 
 import (
 	"fmt"
+	configv1 "github.com/stream-stack/store-operator/apis/config/v1"
 	v13 "github.com/stream-stack/store-operator/apis/storeset/v1"
 	"github.com/stream-stack/store-operator/pkg/base"
 	v12 "k8s.io/api/core/v1"
@@ -10,7 +11,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-const DefaultVolumePath = "/data"
 const AppLabelKey = `app`
 
 func buildAppLabelName(name string) string {
@@ -19,11 +19,12 @@ func buildAppLabelName(name string) string {
 
 //TODO:修改为使用yaml+go template渲染资源(更直观)
 
-func NewLocalPersistentVolumeSteps(cfg *InitConfig) *base.Step {
-	steps := make([]*base.Step, cfg.StoreReplicas)
+func NewLocalPersistentVolumeSteps(cfg configv1.StreamControllerConfig) *base.Step {
+	replicas := cfg.Store.Replicas
+	steps := make([]*base.Step, replicas)
 	var i int32 = 0
-	for ; i < cfg.StoreReplicas; i++ {
-		steps[i] = buildStepByIndex(i)
+	for ; i < replicas; i++ {
+		steps[i] = buildStepByIndex(i, cfg)
 	}
 	return &base.Step{
 		Name: "localPersistentVolume",
@@ -39,7 +40,7 @@ func NewLocalPersistentVolumeSteps(cfg *InitConfig) *base.Step {
 	}
 }
 
-func buildStepByIndex(index int32) *base.Step {
+func buildStepByIndex(index int32, cfg configv1.StreamControllerConfig) *base.Step {
 	return &base.Step{
 		Name: fmt.Sprintf(`localPersistentVolume-%d`, index),
 		GetObj: func() base.StepObject {
@@ -102,7 +103,7 @@ func buildStepByIndex(index int32) *base.Step {
 			c := t.(*v13.StoreSet)
 			if c.Spec.Volume.LocalVolumeSource == nil {
 				c.Spec.Volume.LocalVolumeSource = &v12.LocalVolumeSource{
-					Path: DefaultVolumePath,
+					Path: cfg.Store.VolumePath,
 				}
 			}
 		},

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/go-logr/logr"
+	configv1 "github.com/stream-stack/store-operator/apis/config/v1"
 	v12 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -17,9 +18,13 @@ import (
 	"time"
 )
 
-const FinalizerName = "finalizer.stream-stack.tanx"
+var FinalizerName string
+var retryDuration time.Duration
 
-var retryDuration = time.Second * 1
+func DefaultConfigInit(config configv1.StreamControllerConfig) {
+	FinalizerName = config.Workflow.FinalizerName
+	retryDuration = config.Workflow.RetryDuration.Duration
+}
 
 type StepObject interface {
 	runtime.Object

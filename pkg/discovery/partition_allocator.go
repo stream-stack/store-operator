@@ -86,8 +86,9 @@ func handlerRequest(ctx context.Context, c client.Client, broker v12.Broker) {
 
 func writePartition(ctx context.Context, set *operator.StoreSet, broker v12.Broker, i uint64, begin uint64) {
 	bytes, err := pp.Marshal(&operator.Partition{
-		Begin: begin,
-		Store: set,
+		Begin:      begin,
+		Store:      set,
+		CreateTime: uint64(time.Now().Unix()),
 	})
 	if err != nil {
 		logrus.Errorf("protobuf marshal partition error,%v", err)

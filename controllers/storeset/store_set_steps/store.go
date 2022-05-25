@@ -139,16 +139,22 @@ func NewStoreSteps(cfg configv1.StreamControllerConfig) *base.Step {
 									Name:    "store",
 									Image:   c.Spec.Store.Image,
 									Command: []string{`/store`},
-									//      --Address string                  TCP host+port for this node (default "0.0.0.0:50051")
-									//      --Bootstrap                       Whether to bootstrap the Raft cluster
-									//      --DataDir string                  data dir (default "data")
-									//      --RaftId string                   Node id used by Raft
-									//      --Wal-BinaryLogFormat             wal BinaryLogFormat
-									//      --Wal-NoSync                      wal NoSync
-									//      --Wal-SegmentCacheSize int        wal SegmentCacheSize
-									//      --Wal-SegmentSize int             wal SegmentSize (default 100000)
-									//      --Grpc-ApplyLogTimeout duration   grpc apply log timeout second (default 1s)
-									Args:       []string{`--DataDir=/data`, `--Bootstrap=true`},
+									//--Address string                       TCP host+port for this node (default "0.0.0.0:50051")
+									//--BaseDir string                       base data directory (default "./data")
+									//--Bootstrap                            Whether to bootstrap the Raft cluster
+									//--DataDir string                       data dir (default "data")
+									//--Grpc-ApplyLogTimeout duration        grpc apply log timeout second (default 1s)
+									//--RaftId string                        Node id used by Raft(default hostname)
+									//--ValueDir string                      value dir (default "value")
+									//--badgerGCInterval duration            badger GCInterval (default 1m0s)
+									//--badgerGCThreshold int                badger GCThreshold (default 1073741824)
+									//--badgerMandatoryGCInterval duration   badger MandatoryGCInterval (default 10m0s)
+									//--badgerSync                           badger Sync (default true)
+									//--badgerValueLogGC                     badger ValueLogGC
+									//-h, --help                                 help for this command
+									//--snapshotDataDir string               snapshot data directory (default "snapshot")
+									//--snapshotRetain int                   snapshot retain count (default 10)
+									Args:       []string{`--BaseDir=/data`, `--Bootstrap=true`},
 									WorkingDir: "/",
 									//TODO:集群内通信端口与 api端口分离
 									Ports: []v12.ContainerPort{
